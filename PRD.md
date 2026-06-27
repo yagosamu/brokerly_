@@ -3405,12 +3405,12 @@ flowchart LR
 
 ### Sprint 4 — Autenticação por E-mail
 **Objetivo:** auth nativa por e-mail.
-- [ ] App `accounts` com `User` customizado (`USERNAME_FIELD='email'`)
-- [ ] `EmailBackend` em `accounts/backends.py`
-- [ ] CBVs de registro, login, logout, perfil
+- [x] App `accounts` com `User` customizado (`USERNAME_FIELD='email'`)
+- [x] `EmailBackend` em `accounts/backends.py`
+- [x] CBVs de registro, login, logout, perfil
 - [ ] Recuperação de senha nativa (views + templates + e-mail)
-- [ ] Configurar e-mail via `.env`
-- [ ] 1ª migração com `User` customizado
+- [x] Configurar e-mail via `.env`
+- [x] 1ª migração com `User` customizado
 
 **Entrega:** usuário registra, loga por e-mail e recupera senha.
 
@@ -3784,5 +3784,4 @@ O Brokerly é um SaaS multi tenant para corretoras de seguros cuja **espinha dor
 4. Revisar, corrigir e seguir sequencialmente até a Sprint 28 (a Sprint 29, de dados de demonstração, pode ser executada a partir da Sprint 24 sempre que quiser popular o ambiente para demos).
 
 > Este documento cresce, nunca diminui: novas features viram novas subseções na seção de funcionalidades e novas sprints na seção 53, com a versão do cabeçalho incrementada.
-
 
