@@ -4,12 +4,14 @@ arabic-reshaper==3.0.0
 asgiref==3.11.1
 asn1crypto==1.5.1
 certifi==2026.2.25
+celery[redis]==5.6.3
 cffi==2.0.0
 charset-normalizer==3.4.6
 cryptography==46.0.5
 cssselect2==0.9.0
 distro==1.9.0
 Django==6.0.3
+django-celery-beat==2.9.0
 django-environ==0.14.0
 django-widget-tweaks==1.5.1
 freetype-py==2.5.1
@@ -48,6 +50,7 @@ python-dotenv==1.2.2
 psycopg[binary]==3.3.4
 PyYAML==6.0.3
 regex==2026.2.28
+redis==6.4.0
 reportlab==4.4.10
 requests==2.32.5
 requests-toolbelt==1.0.0
@@ -67,6 +70,7 @@ uritools==6.0.1
 urllib3==2.6.3
 uuid_utils==0.14.1
 webencodings==0.5.1
+whitenoise==6.12.0
 xhtml2pdf==0.2.17
 xxhash==3.6.0
 zstandard==0.25.0
