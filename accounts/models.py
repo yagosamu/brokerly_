@@ -1,7 +1,18 @@
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
+from accounts.managers import UserManager
 from base.models import BaseModel
 
 
 class User(AbstractUser, BaseModel):
-    pass
+    username = None
+    email = models.EmailField('email address', unique=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
+
+    def __str__(self):
+        return self.email
