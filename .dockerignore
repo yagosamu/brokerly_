@@ -1,0 +1,16 @@
+.venv
+.git
+.gitignore
+db.sqlite3
+media/
+staticfiles/
+design_system/refs/
+__pycache__
+*.pyc
+*.pyo
+.env
+.env.local
+*.log
+.DS_Store
+.idea
+.vscode
