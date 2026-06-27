@@ -3386,9 +3386,9 @@ flowchart LR
 
 ### Sprint 3 — Configuração Django Base + Design System + Celery Bootstrap
 **Objetivo:** base de templates e bootstrap do Celery.
-- [ ] Adicionar `design_system/design-system.html` ao repo (artefato obrigatório)
-- [ ] Extrair tokens para `static/css/tokens.css`
-- [ ] Criar templates base: `base.html`, `base_auth.html`, `base_app.html` (menu lateral + topbar)
+- [x] Adicionar `design_system/design-system.html` ao repo (artefato obrigatório)
+- [x] Extrair tokens para `static/css/tokens.css`
+- [x] Criar templates base: `base.html`, `base_auth.html`, `base_app.html` (menu lateral + topbar)
 - [x] Configurar estáticos (collectstatic / WhiteNoise)
 - [x] Criar `core/celery.py` e carregar no `core/__init__.py`
 - [x] Rodar uma task de exemplo no worker
