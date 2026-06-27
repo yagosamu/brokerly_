@@ -3347,14 +3347,14 @@ flowchart LR
 
 ### Sprint 1 — Setup Inicial
 **Objetivo:** estrutura do projeto, ambiente e configuração base.
-- [ ] Criar `.venv` na raiz (Python 3.13+)
-- [ ] Iniciar projeto Django 6 (`core/`) e `requirements.txt`
-- [ ] Criar `.gitignore`
-- [ ] Criar `.env` e `.env.example`
-- [ ] Configurar **único** `settings.py` lendo do `.env` (decouple/environ)
-- [ ] Definir `AUTH_USER_MODEL='accounts.User'` (antes do 1º migrate)
-- [ ] `TIME_ZONE='America/Sao_Paulo'`, `LANGUAGE_CODE='pt-br'`, `USE_TZ=True`
-- [ ] Criar app `base` com `BaseModel` e `TenantAwareModel` (abstratas) e `TenantManager`
+- [x] Criar `.venv` na raiz (Python 3.13+)
+- [x] Iniciar projeto Django 6 (`core/`) e `requirements.txt`
+- [x] Criar `.gitignore`
+- [x] Criar `.env` e `.env.example`
+- [x] Configurar **único** `settings.py` lendo do `.env` (decouple/environ)
+- [x] Definir `AUTH_USER_MODEL='accounts.User'` (antes do 1º migrate)
+- [x] `TIME_ZONE='America/Sao_Paulo'`, `LANGUAGE_CODE='pt-br'`, `USE_TZ=True`
+- [x] Criar app `base` com `BaseModel` e `TenantAwareModel` (abstratas) e `TenantManager`
 
 **Entrega:** projeto Django roda localmente com settings via `.env`.
 
@@ -3784,7 +3784,6 @@ O Brokerly é um SaaS multi tenant para corretoras de seguros cuja **espinha dor
 4. Revisar, corrigir e seguir sequencialmente até a Sprint 28 (a Sprint 29, de dados de demonstração, pode ser executada a partir da Sprint 24 sempre que quiser popular o ambiente para demos).
 
 > Este documento cresce, nunca diminui: novas features viram novas subseções na seção de funcionalidades e novas sprints na seção 53, com a versão do cabeçalho incrementada.
-
 
 
 
