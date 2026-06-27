@@ -3408,7 +3408,7 @@ flowchart LR
 - [x] App `accounts` com `User` customizado (`USERNAME_FIELD='email'`)
 - [x] `EmailBackend` em `accounts/backends.py`
 - [x] CBVs de registro, login, logout, perfil
-- [ ] Recuperação de senha nativa (views + templates + e-mail)
+- [x] Recuperação de senha nativa (views + templates + e-mail)
 - [x] Configurar e-mail via `.env`
 - [x] 1ª migração com `User` customizado
 
