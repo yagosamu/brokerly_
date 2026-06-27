@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+{% include 'partials/_sidebar.html' %}
+{% include 'partials/_topbar.html' %}
+
+<main class="nxl-container">
+    <div class="nxl-content">
+        {% block page_header %}
+        <div class="page-header">
+            <div class="page-header-left d-flex align-items-center">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">{% block page_title %}{% endblock %}</h5>
+                </div>
+                <ul class="breadcrumb">
+                    {% block breadcrumb %}
+                    <li class="breadcrumb-item"><a href="#">Início</a></li>
+                    {% endblock %}
+                </ul>
+            </div>
+            <div class="page-header-right ms-auto">
+                <div class="page-header-right-items">
+                    {% block page_actions %}{% endblock %}
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer class="footer">
+            <p class="fs-11 text-muted fw-medium text-uppercase mb-0 lh-1">
+                &copy; {% now 'Y' %} Brokerly. Todos os direitos reservados.
+            </p>
+            <div class="d-flex align-items-center gap-4">
+                <a href="#" class="fs-11 fw-semibold text-uppercase">Ajuda</a>
+                <a href="#" class="fs-11 fw-semibold text-uppercase">Termos</a>
+                <a href="#" class="fs-11 fw-semibold text-uppercase">Privacidade</a>
+            </div>
+        </footer>
+    </div>
+</main>
+{% endblock %}

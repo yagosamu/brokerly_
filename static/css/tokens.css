@@ -1,0 +1,55 @@
+/*
+ * Brokerly · Design Tokens
+ *
+ * Tokens extraídos diretamente do theme.min.css do Duralux.
+ * NÃO inventar valores — qualquer ajuste precisa ser confirmado contra o tema.
+ * Uso: importar logo após o theme.min.css em base.html.
+ */
+
+:root {
+    /* === Brand colors === */
+    --brokerly-primary: #3454d1;
+    --brokerly-success: #17c666;
+    --brokerly-info: #3dc7be;
+    --brokerly-warning: #ffa21d;
+    --brokerly-danger: #ea4d4d;
+    --brokerly-dark: #283c50;
+    --brokerly-darken: #001327;
+
+    /* === Surfaces === */
+    --brokerly-body-bg: #f3f4f6;
+    --brokerly-surface: #ffffff;
+    --brokerly-surface-muted: #eff0f6;
+    --brokerly-border: #e7e9ee;
+
+    /* === Text === */
+    --brokerly-text: #6b7885;
+    --brokerly-text-strong: #283c50;
+    --brokerly-text-muted: #98a0ae;
+
+    /* === Typography === */
+    --brokerly-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --brokerly-font-size-base: 0.84rem;
+    --brokerly-line-height-base: 1.6;
+    --brokerly-font-weight-normal: 400;
+    --brokerly-font-weight-medium: 500;
+    --brokerly-font-weight-semibold: 600;
+    --brokerly-font-weight-bold: 700;
+
+    /* === Radii === */
+    --brokerly-radius-sm: 4px;
+    --brokerly-radius-md: 10px;
+    --brokerly-radius-lg: 15px;
+    --brokerly-radius-pill: 50px;
+
+    /* === Elevation === */
+    --brokerly-shadow-sm: 0 1px 2px rgba(40, 60, 80, 0.06);
+    --brokerly-shadow-md: 0 4px 12px rgba(40, 60, 80, 0.08);
+    --brokerly-shadow-lg: 0 10px 30px rgba(40, 60, 80, 0.12);
+
+    /* === Layout === */
+    --brokerly-sidebar-width: 252px;
+    --brokerly-sidebar-width-collapsed: 72px;
+    --brokerly-topbar-height: 64px;
+    --brokerly-content-max-width: 1480px;
+}

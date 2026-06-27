@@ -1,0 +1,60 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Brokerly · Início{% endblock %}
+{% block page_title %}Início{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="#">Início</a></li>
+<li class="breadcrumb-item">Visão geral</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Bem-vindo ao Brokerly</h5>
+                <p class="fs-12 text-muted mb-0 mt-1">
+                    Shell base renderizado — sidebar, topbar, container e footer aderentes ao design system.
+                </p>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    Este é o ponto de partida da aplicação. As próximas sprints vão preencher a navegação
+                    com rotas reais (clientes, propostas, apólices, sinistros, CRM, dashboard e agentes
+                    de IA). Os links do menu lateral estão como placeholders até as views existirem.
+                </p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card border border-gray-2 shadow-none mb-0">
+                            <div class="card-body">
+                                <div class="fs-11 text-uppercase text-muted">Próxima sprint</div>
+                                <h6 class="mb-1">Sprint 4 · Autenticação por e-mail</h6>
+                                <p class="fs-12 text-muted mb-0">Login, registro e recuperação de senha sobre o shell já pronto.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border border-gray-2 shadow-none mb-0">
+                            <div class="card-body">
+                                <div class="fs-11 text-uppercase text-muted">Referência visual</div>
+                                <h6 class="mb-1">design_system/design-system.html</h6>
+                                <p class="fs-12 text-muted mb-0">Única fonte de verdade para cores, componentes e tipografia.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border border-gray-2 shadow-none mb-0">
+                            <div class="card-body">
+                                <div class="fs-11 text-uppercase text-muted">Background jobs</div>
+                                <h6 class="mb-1">Celery operacional</h6>
+                                <p class="fs-12 text-muted mb-0">Worker registrado e respondendo tasks (validado na Sprint 3).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

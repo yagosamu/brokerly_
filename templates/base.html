@@ -1,0 +1,27 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-BR" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{% block meta_description %}Brokerly · Sistema de gestão para corretoras de seguros.{% endblock %}">
+    <title>{% block title %}Brokerly{% endblock %}</title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'vendor/duralux/images/favicon.ico' %}">
+
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/duralux/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/duralux/css/vendors.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/duralux/css/daterangepicker.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/duralux/css/theme.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tokens.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% block body %}{% endblock %}
+
+    <script src="{% static 'vendor/duralux/js/vendors.min.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

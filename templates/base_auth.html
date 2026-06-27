@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body_class %}auth-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-page {
+        min-height: 100vh;
+        background-color: var(--brokerly-body-bg);
+        font-family: var(--brokerly-font-family);
+        color: var(--brokerly-text);
+    }
+    .auth-shell {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px;
+    }
+    .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--brokerly-surface);
+        border-radius: var(--brokerly-radius-lg);
+        box-shadow: var(--brokerly-shadow-lg);
+        padding: 40px 36px;
+    }
+    .auth-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 28px;
+    }
+    .auth-brand img {
+        max-height: 36px;
+    }
+    .auth-title {
+        font-size: 1.25rem;
+        font-weight: var(--brokerly-font-weight-semibold);
+        color: var(--brokerly-text-strong);
+        margin-bottom: 4px;
+    }
+    .auth-subtitle {
+        font-size: 0.84rem;
+        color: var(--brokerly-text-muted);
+        margin-bottom: 24px;
+    }
+    .auth-footer {
+        margin-top: 24px;
+        text-align: center;
+        font-size: 0.78rem;
+        color: var(--brokerly-text-muted);
+    }
+    .auth-footer a {
+        color: var(--brokerly-primary);
+        text-decoration: none;
+        font-weight: var(--brokerly-font-weight-semibold);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <img src="{% static 'vendor/duralux/images/logo-full.png' %}" alt="Brokerly">
+        </div>
+        {% block auth_header %}
+        <h1 class="auth-title">{% block auth_title %}Bem-vindo{% endblock %}</h1>
+        <p class="auth-subtitle">{% block auth_subtitle %}Acesse sua conta para continuar.{% endblock %}</p>
+        {% endblock %}
+
+        {% block auth_content %}{% endblock %}
+
+        {% block auth_footer %}
+        <div class="auth-footer">
+            <span>Brokerly &copy; {% now 'Y' %}</span>
+        </div>
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}

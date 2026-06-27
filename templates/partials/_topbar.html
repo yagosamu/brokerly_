@@ -1,0 +1,59 @@
+{% load static %}
+<header class="nxl-header">
+    <div class="header-wrapper">
+        <div class="header-left d-flex align-items-center gap-4">
+            <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse">
+                <i class="feather-align-left"></i>
+            </a>
+            <div class="nxl-navigation-toggle">
+                <a href="javascript:void(0);" id="menu-mini-button">
+                    <i class="feather-align-left fs-20"></i>
+                </a>
+                <a href="javascript:void(0);" id="menu-full-button" class="d-none">
+                    <i class="feather-align-right fs-20"></i>
+                </a>
+            </div>
+            <div class="d-none d-md-block">
+                <div class="search-form-wrapper position-relative">
+                    <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                    <input type="text" class="form-control search-input-field ps-5" placeholder="Buscar clientes, apólices, sinistros…">
+                </div>
+            </div>
+        </div>
+
+        <div class="header-right ms-auto">
+            <div class="d-flex align-items-center gap-2">
+                <div class="nxl-h-item d-none d-sm-flex">
+                    <a href="javascript:void(0);" class="nxl-head-link me-0" title="Notificações">
+                        <i class="feather-bell"></i>
+                        <span class="badge bg-danger nxl-h-badge">3</span>
+                    </a>
+                </div>
+
+                <div class="nxl-h-item">
+                    <a href="javascript:void(0);" class="nxl-head-link me-0" title="Modo escuro">
+                        <i class="feather-moon"></i>
+                    </a>
+                </div>
+
+                <div class="nxl-h-item dropdown nxl-user-dropdown">
+                    <a class="nxl-head-link me-0 d-flex align-items-center gap-2 dropdown-toggle" data-bs-toggle="dropdown">
+                        <div class="avatar-text avatar-md">
+                            <span class="fw-bold">BR</span>
+                        </div>
+                        <div class="d-none d-md-block text-start">
+                            <div class="fs-12 fw-bold text-dark mb-0 lh-1">{{ request.user.get_full_name|default:'Brokerly' }}</div>
+                            <small class="text-muted">{{ request.user.email|default:'demonstração' }}</small>
+                        </div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a href="#" class="dropdown-item"><i class="feather-user me-2"></i>Meu perfil</a>
+                        <a href="#" class="dropdown-item"><i class="feather-settings me-2"></i>Configurações</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item text-danger"><i class="feather-log-out me-2"></i>Sair</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
