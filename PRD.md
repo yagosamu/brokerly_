@@ -3389,9 +3389,9 @@ flowchart LR
 - [ ] Adicionar `design_system/design-system.html` ao repo (artefato obrigatório)
 - [ ] Extrair tokens para `static/css/tokens.css`
 - [ ] Criar templates base: `base.html`, `base_auth.html`, `base_app.html` (menu lateral + topbar)
-- [ ] Configurar estáticos (collectstatic / WhiteNoise)
-- [ ] Criar `core/celery.py` e carregar no `core/__init__.py`
-- [ ] Rodar uma task de exemplo no worker
+- [x] Configurar estáticos (collectstatic / WhiteNoise)
+- [x] Criar `core/celery.py` e carregar no `core/__init__.py`
+- [x] Rodar uma task de exemplo no worker
 
 **Entrega:** layout base do DS aplicado e Celery executando tasks.
 
@@ -3784,6 +3784,5 @@ O Brokerly é um SaaS multi tenant para corretoras de seguros cuja **espinha dor
 4. Revisar, corrigir e seguir sequencialmente até a Sprint 28 (a Sprint 29, de dados de demonstração, pode ser executada a partir da Sprint 24 sempre que quiser popular o ambiente para demos).
 
 > Este documento cresce, nunca diminui: novas features viram novas subseções na seção de funcionalidades e novas sprints na seção 53, com a versão do cabeçalho incrementada.
-
 
 
