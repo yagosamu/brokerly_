@@ -3367,11 +3367,11 @@ flowchart LR
 
 ### Sprint 2 — Docker Local
 **Objetivo:** ambiente de desenvolvimento containerizado.
-- [ ] Criar `Dockerfile` (Python 3.13-slim) e `entrypoint.sh`
-- [ ] Criar `docker-compose.yml` com `app`, `db` (postgres:16), `rabbitmq`, `redis`
-- [ ] Adicionar serviços `celery_worker` e `celery_beat`
-- [ ] Volumes persistentes (`pg_data`, `media_data`)
-- [ ] Validar `docker compose up` e conexão ao Postgres
+- [x] Criar `Dockerfile` (Python 3.13-slim) e `entrypoint.sh`
+- [x] Criar `docker-compose.yml` com `app`, `db` (postgres:16), `rabbitmq`, `redis`
+- [x] Adicionar serviços `celery_worker` e `celery_beat`
+- [x] Volumes persistentes (`pg_data`, `media_data`)
+- [x] Validar `docker compose up` e conexão ao Postgres
 
 **Entrega:** `docker compose up` sobe app + banco + broker + worker/beat.
 
@@ -3784,7 +3784,6 @@ O Brokerly é um SaaS multi tenant para corretoras de seguros cuja **espinha dor
 4. Revisar, corrigir e seguir sequencialmente até a Sprint 28 (a Sprint 29, de dados de demonstração, pode ser executada a partir da Sprint 24 sempre que quiser popular o ambiente para demos).
 
 > Este documento cresce, nunca diminui: novas features viram novas subseções na seção de funcionalidades e novas sprints na seção 53, com a versão do cabeçalho incrementada.
-
 
 
 
