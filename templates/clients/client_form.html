@@ -1,0 +1,216 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if mode == 'create' %}Novo cliente{% else %}Editar cliente{% endif %} · Brokerly{% endblock %}
+{% block page_title %}{% if mode == 'create' %}Novo cliente{% else %}Editar cliente{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'clients:client_list' %}">Clientes</a></li>
+<li class="breadcrumb-item">{% if mode == 'create' %}Cadastrar{% else %}Editar{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% if mode == 'update' %}{% url 'clients:client_detail' object.id %}{% else %}{% url 'clients:client_list' %}{% endif %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .field-pf, .field-pj { display: none; }
+    body[data-person-type="PF"] .field-pf { display: block; }
+    body[data-person-type="PJ"] .field-pj { display: block; }
+    body[data-person-type="PF"] .document-label-pj,
+    body[data-person-type="PJ"] .document-label-pf { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate id="client-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">
+        {{ form.non_field_errors|first }}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Identificação</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.person_type.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Tipo de pessoa <span class="text-danger">*</span></label>
+                            {{ form.person_type|add_class:"form-select"|attr:"id:id_person_type" }}
+                            {% if form.person_type.errors %}<div class="invalid-feedback d-block">{{ form.person_type.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                <span class="document-label-pf">Nome completo</span>
+                                <span class="document-label-pj">Razão social</span>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name|add_class:"form-control" }}
+                            {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-8 field-pj">
+                            <label for="{{ form.trade_name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Nome fantasia</label>
+                            {{ form.trade_name|add_class:"form-control" }}
+                            {% if form.trade_name.errors %}<div class="invalid-feedback d-block">{{ form.trade_name.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="{{ form.document.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                <span class="document-label-pf">CPF</span>
+                                <span class="document-label-pj">CNPJ</span>
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.document|add_class:"form-control"|attr:"inputmode:numeric" }}
+                            {% if form.document.errors %}<div class="invalid-feedback d-block">{{ form.document.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4 field-pf">
+                            <label for="{{ form.birth_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Data de nascimento</label>
+                            {{ form.birth_date|add_class:"form-control" }}
+                            {% if form.birth_date.errors %}<div class="invalid-feedback d-block">{{ form.birth_date.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">E-mail</label>
+                            {{ form.email|add_class:"form-control" }}
+                            {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Telefone</label>
+                            {{ form.phone|add_class:"form-control"|attr:"placeholder:(11) 99999-9999" }}
+                            {% if form.phone.errors %}<div class="invalid-feedback d-block">{{ form.phone.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Endereço</h5>
+                    <p class="fs-12 text-muted mb-0 mt-1">Todos os campos são opcionais.</p>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="{{ form.zip_code.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">CEP</label>
+                            {{ form.zip_code|add_class:"form-control"|attr:"placeholder:00000-000" }}
+                            {% if form.zip_code.errors %}<div class="invalid-feedback d-block">{{ form.zip_code.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <label for="{{ form.address_line.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Logradouro</label>
+                            {{ form.address_line|add_class:"form-control" }}
+                            {% if form.address_line.errors %}<div class="invalid-feedback d-block">{{ form.address_line.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.address_number.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Número</label>
+                            {{ form.address_number|add_class:"form-control" }}
+                            {% if form.address_number.errors %}<div class="invalid-feedback d-block">{{ form.address_number.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-5">
+                            <label for="{{ form.address_complement.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Complemento</label>
+                            {{ form.address_complement|add_class:"form-control" }}
+                            {% if form.address_complement.errors %}<div class="invalid-feedback d-block">{{ form.address_complement.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.district.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Bairro</label>
+                            {{ form.district|add_class:"form-control" }}
+                            {% if form.district.errors %}<div class="invalid-feedback d-block">{{ form.district.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <label for="{{ form.city.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Cidade</label>
+                            {{ form.city|add_class:"form-control" }}
+                            {% if form.city.errors %}<div class="invalid-feedback d-block">{{ form.city.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.state.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">UF</label>
+                            {{ form.state|add_class:"form-control text-uppercase"|attr:"maxlength:2" }}
+                            {% if form.state.errors %}<div class="invalid-feedback d-block">{{ form.state.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Observações</h5>
+                </div>
+                <div class="card-body">
+                    {{ form.notes|add_class:"form-control"|attr:"rows:4"|attr:"placeholder:Anotações internas sobre o cliente (não aparecem na proposta ou na apólice)." }}
+                    {% if form.notes.errors %}<div class="invalid-feedback d-block">{{ form.notes.errors|first }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_active|add_class:"form-check-input" }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            Cliente ativo
+                        </label>
+                    </div>
+                    <p class="fs-12 text-muted mb-0 mt-2">
+                        Clientes inativos continuam no histórico, mas não aparecem nos seletores de propostas e apólices.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Dicas</h5>
+                </div>
+                <div class="card-body fs-12 text-muted">
+                    <p class="mb-2">
+                        <strong class="text-dark">CPF / CNPJ</strong> é único por corretora — você não consegue cadastrar o mesmo documento duas vezes.
+                    </p>
+                    <p class="mb-2">
+                        <strong class="text-dark">E-mail</strong> e <strong class="text-dark">telefone</strong> serão usados em futuros disparos automáticos.
+                    </p>
+                    <p class="mb-0">
+                        <strong class="text-dark">Anexos</strong> (contratos, RG, CNH) podem ser enviados depois na tela de detalhe do cliente.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-body d-flex justify-content-end gap-2">
+                    <a href="{% if mode == 'update' %}{% url 'clients:client_detail' object.id %}{% else %}{% url 'clients:client_list' %}{% endif %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if mode == 'create' %}Cadastrar cliente{% else %}Salvar alterações{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var sel = document.getElementById('id_person_type');
+    function sync() {
+        document.body.setAttribute('data-person-type', sel.value || 'PF');
+    }
+    if (sel) {
+        sync();
+        sel.addEventListener('change', sync);
+    }
+})();
+</script>
+{% endblock %}

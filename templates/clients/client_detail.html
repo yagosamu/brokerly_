@@ -1,0 +1,272 @@
+{% extends 'base_app.html' %}
+
+{% block title %}{{ client.name }} · Brokerly{% endblock %}
+{% block page_title %}{{ client.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'clients:client_list' %}">Clientes</a></li>
+<li class="breadcrumb-item">{{ client.name|truncatechars:40 }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{% url 'clients:client_list' %}" class="btn btn-sm btn-light-brand">
+        <i class="feather-arrow-left me-1"></i>Voltar
+    </a>
+    <a href="{% url 'clients:client_update' client.id %}" class="btn btn-sm btn-primary">
+        <i class="feather-edit me-1"></i>Editar
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .client-hero {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .client-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(52, 84, 209, 0.12);
+        color: var(--brokerly-primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: var(--brokerly-font-weight-bold);
+        font-size: 18px;
+    }
+    .info-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--brokerly-border);
+    }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--brokerly-text-muted);
+        font-weight: var(--brokerly-font-weight-semibold);
+        letter-spacing: 0.4px;
+    }
+    .info-row-value {
+        font-size: 14px;
+        color: var(--brokerly-text-strong);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="client-hero">
+                <span class="client-avatar">
+                    {% if client.name %}{{ client.name|slice:":1"|upper }}{% endif %}
+                </span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">{{ client.name }}</h4>
+                        {% if client.person_type == 'PF' %}
+                        <span class="badge bg-soft-primary text-primary">Pessoa Física</span>
+                        {% else %}
+                        <span class="badge bg-soft-warning text-warning">Pessoa Jurídica</span>
+                        {% endif %}
+                        {% if client.is_active %}
+                        <span class="badge bg-soft-success text-success">Ativo</span>
+                        {% else %}
+                        <span class="badge bg-soft-danger text-danger">Inativo</span>
+                        {% endif %}
+                    </div>
+                    <div class="fs-12 text-muted mt-1">
+                        {{ client.document }}
+                        {% if client.trade_name %} · {{ client.trade_name }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4 fs-12 text-muted">
+                <div>
+                    <div class="text-uppercase fs-11">Cadastrado em</div>
+                    <div class="text-dark fw-semibold">{{ client.created_at|date:'d/m/Y' }}</div>
+                </div>
+                <div>
+                    <div class="text-uppercase fs-11">Última atualização</div>
+                    <div class="text-dark fw-semibold">{{ client.updated_at|date:'d/m/Y H:i' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'info' or not active_tab %}active{% endif %}" href="?tab=info">
+            <i class="feather-user me-1"></i>Informações
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'attachments' %}active{% endif %}" href="?tab=attachments">
+            <i class="feather-file-text me-1"></i>Anexos
+            <span class="badge bg-gray-200 text-dark ms-1">{{ client_documents|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link disabled" title="Em breve">
+            <i class="feather-shield me-1"></i>Apólices <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link disabled" title="Em breve">
+            <i class="feather-file-plus me-1"></i>Propostas <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link disabled" title="Em breve">
+            <i class="feather-alert-circle me-1"></i>Sinistros <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+        </a>
+    </li>
+</ul>
+
+{% if active_tab == 'attachments' %}
+{% include 'documents/_attachments.html' with content_type_id=attachment_content_type_id object_id=client.id documents=client_documents can_upload=can_upload_documents can_delete=can_delete_documents next_url=request.get_full_path %}
+{% else %}
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Dados principais</h5>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-row-label">Nome / Razão social</span>
+                    <span class="info-row-value">{{ client.name }}</span>
+                </div>
+                {% if client.trade_name %}
+                <div class="info-row">
+                    <span class="info-row-label">Nome fantasia</span>
+                    <span class="info-row-value">{{ client.trade_name }}</span>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-row-label">{% if client.person_type == 'PF' %}CPF{% else %}CNPJ{% endif %}</span>
+                    <span class="info-row-value">{{ client.document }}</span>
+                </div>
+                {% if client.birth_date %}
+                <div class="info-row">
+                    <span class="info-row-label">Data de nascimento</span>
+                    <span class="info-row-value">{{ client.birth_date|date:'d/m/Y' }}</span>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-row-label">E-mail</span>
+                    <span class="info-row-value">{{ client.email|default:'—' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Telefone</span>
+                    <span class="info-row-value">{{ client.phone|default:'—' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Endereço</h5>
+            </div>
+            <div class="card-body">
+                {% if client.address_line or client.city %}
+                <div class="info-row">
+                    <span class="info-row-label">Logradouro</span>
+                    <span class="info-row-value">
+                        {{ client.address_line|default:'—' }}{% if client.address_number %}, {{ client.address_number }}{% endif %}
+                        {% if client.address_complement %} · {{ client.address_complement }}{% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Bairro / Cidade / UF</span>
+                    <span class="info-row-value">
+                        {{ client.district|default:'—' }} · {{ client.city|default:'—' }}{% if client.state %} / {{ client.state }}{% endif %}
+                    </span>
+                </div>
+                {% if client.zip_code %}
+                <div class="info-row">
+                    <span class="info-row-label">CEP</span>
+                    <span class="info-row-value">{{ client.zip_code }}</span>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="fs-12 text-muted mb-0">Nenhum endereço cadastrado.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if client.notes %}
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Observações internas</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ client.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="card-title mb-0">
+                    <i class="feather-feather me-1"></i>Resumo com IA
+                </h5>
+                {% if client.ai_summary_status == 'done' %}
+                <span class="badge bg-soft-success text-success">{{ client.get_ai_summary_status_display }}</span>
+                {% elif client.ai_summary_status == 'processing' %}
+                <span class="badge bg-soft-warning text-warning">{{ client.get_ai_summary_status_display }}</span>
+                {% elif client.ai_summary_status == 'error' %}
+                <span class="badge bg-soft-danger text-danger">{{ client.get_ai_summary_status_display }}</span>
+                {% else %}
+                <span class="badge bg-gray-200 text-dark">{{ client.get_ai_summary_status_display }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if client.ai_summary %}
+                <p class="mb-2" style="white-space: pre-line;">{{ client.ai_summary }}</p>
+                {% if client.ai_summary_updated_at %}
+                <small class="fs-11 text-muted">Atualizado em {{ client.ai_summary_updated_at|date:'d/m/Y H:i' }}</small>
+                {% endif %}
+                {% else %}
+                <p class="fs-12 text-muted mb-3">
+                    Quando este recurso estiver disponível, um agente de IA vai gerar um resumo da relação do cliente com a corretora.
+                </p>
+                <button type="button" class="btn btn-light-brand w-100" disabled>
+                    <i class="feather-feather me-1"></i>Resumir com IA <span class="badge bg-gray-200 text-dark ms-2">em breve</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Atalhos</h5>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="?tab=attachments" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-file-text me-1"></i>Ver anexos
+                    <span class="badge bg-gray-200 text-dark ms-1">{{ client_documents|length }}</span>
+                </a>
+                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
+                    <i class="feather-file-plus me-1"></i>Nova proposta <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+                </button>
+                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
+                    <i class="feather-alert-circle me-1"></i>Abrir sinistro <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
