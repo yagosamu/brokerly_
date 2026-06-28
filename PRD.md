@@ -3506,11 +3506,11 @@ flowchart LR
 
 ### Sprint 9 — Clientes
 **Objetivo:** cadastro de clientes.
-- [ ] App `clients` com model `Client` (PF/PJ, `ai_summary`)
-- [ ] CRUD com `TenantQuerysetMixin` + busca/paginação
-- [ ] `UniqueConstraint(['brokerage','document'])`
-- [ ] Tela de detalhe com abas (apólices, propostas, sinistros, anexos)
-- [ ] Integrar anexos protegidos
+- [x] App `clients` com model `Client` (PF/PJ, `ai_summary`)
+- [x] CRUD com `TenantQuerysetMixin` + busca/paginação
+- [x] `UniqueConstraint(['brokerage','document'])`
+- [x] Tela de detalhe com abas (apólices, propostas, sinistros, anexos)
+- [x] Integrar anexos protegidos
 
 **Entrega:** clientes cadastrados, isolados por tenant, com anexos.
 
