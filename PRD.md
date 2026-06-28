@@ -3445,11 +3445,13 @@ flowchart LR
 
 ### Sprint 6 — Corretoras e Onboarding
 **Objetivo:** cadastro do tenant e planos.
-- [ ] Models `Plan` e `Subscription`
-- [ ] Fluxo de signup (usuário + corretora) com CNPJ e razão social obrigatórios
-- [ ] Transação atômica: cria `Brokerage` + `User(owner)` + `Subscription(Free)`
-- [ ] Signal pós-criação: seed de ramos padrão e pipeline padrão
-- [ ] Página "Meu Plano" (Free ativo; pagos "Em breve" desabilitados)
+- [x] Models `Plan` e `Subscription`
+- [x] Fluxo de signup (usuário + corretora) com CNPJ e razão social obrigatórios
+- [x] Transação atômica: cria `Brokerage` + `User(owner)` + `Subscription(Free)`
+- [x] Signal pós-criação: seed de ramos padrão e pipeline padrão
+  *Nesta sprint, apenas o plano Free é seedado; ramos e pipeline serão seedados nas
+  sprints 10 e 18, conforme as decisões de implementação abaixo.*
+- [x] Página "Meu Plano" (Free ativo; pagos "Em breve" desabilitados)
 
 **Entrega:** novo usuário cria corretora no plano Free e é direcionado ao dashboard.
 
