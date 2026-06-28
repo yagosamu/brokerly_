@@ -3486,11 +3486,11 @@ flowchart LR
 
 ### Sprint 8 — Anexos Protegidos
 **Objetivo:** base de documentos protegidos (reutilizada pelos CRUDs).
-- [ ] App `documents` com model `Document` (GenericFK)
-- [ ] `upload_to` segregado por `brokerage_<id>` + uuid
-- [ ] `ProtectedDocumentDownloadView` (auth + tenant + permissão)
-- [ ] Partial de upload/listagem de anexos reutilizável
-- [ ] Garantir ausência de rota pública para `/media/`
+- [x] App `documents` com model `Document` (GenericFK)
+- [x] `upload_to` segregado por `brokerage_<id>` + uuid
+- [x] `ProtectedDocumentDownloadView` (auth + tenant + permissão)
+- [x] Partial de upload/listagem de anexos reutilizável
+- [x] Garantir ausência de rota pública para `/media/`
 
 **Entrega:** anexos protegidos disponíveis para vincular a qualquer entidade.
 
