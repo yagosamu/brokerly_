@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'accounts',
     'documents',
     'clients',
+    'insurers',
 ]
 
 MIDDLEWARE = [
