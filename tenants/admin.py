@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from tenants.models import Brokerage, Plan
+from tenants.models import Brokerage, Plan, Subscription
 
 
 @admin.register(Brokerage)
@@ -15,3 +15,10 @@ class PlanAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'price', 'is_available')
     search_fields = ('name', 'slug')
     list_filter = ('is_available',)
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('brokerage', 'plan', 'status', 'started_at', 'expires_at')
+    list_filter = ('status', 'plan')
+    search_fields = ('brokerage__legal_name', 'brokerage__cnpj')

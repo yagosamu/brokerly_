@@ -52,3 +52,32 @@ class Brokerage(BaseModel):
 
     def __str__(self):
         return self.legal_name
+
+
+class Subscription(BaseModel):
+    STATUS_CHOICES = (
+        ('active', 'Ativa'),
+        ('past_due', 'Pendente'),
+        ('canceled', 'Cancelada'),
+    )
+
+    brokerage = models.OneToOneField(
+        Brokerage,
+        on_delete=models.CASCADE,
+        related_name='subscription',
+    )
+    plan = models.ForeignKey(
+        Plan,
+        on_delete=models.PROTECT,
+        related_name='subscriptions',
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='active',
+    )
+    started_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.brokerage} · {self.plan} ({self.get_status_display()})'

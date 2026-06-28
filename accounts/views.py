@@ -11,7 +11,7 @@ from accounts.forms import EmailAuthenticationForm, ProfileForm, RegisterForm
 class RegisterView(CreateView):
     template_name = 'accounts/register.html'
     form_class = RegisterForm
-    success_url = reverse_lazy('accounts:profile')
+    success_url = reverse_lazy('tenants:onboarding')
 
     def form_valid(self, form):
         self.object = form.save()
