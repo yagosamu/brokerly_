@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
 
+from accounts.models import User
 from tenants.forms import BrokerageOnboardingForm
 from tenants.models import Plan, Subscription
 
@@ -35,7 +36,8 @@ class BrokerageOnboardingView(LoginRequiredMixin, CreateView):
         )
 
         self.request.user.brokerage = brokerage
-        self.request.user.save(update_fields=['brokerage'])
+        self.request.user.role = User.Role.OWNER
+        self.request.user.save(update_fields=['brokerage', 'role'])
 
         messages.success(
             self.request,

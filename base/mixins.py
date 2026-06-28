@@ -21,5 +21,10 @@ class RoleRequiredMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and request.user.brokerage is None:
             return HttpResponseForbidden('Conta sem corretora vinculada.')
-        # Role validation is enabled in Sprint 7.
+        if (
+            self.allowed_roles
+            and request.user.is_authenticated
+            and request.user.role not in self.allowed_roles
+        ):
+            return HttpResponseForbidden('Acesso negado para o seu perfil.')
         return super().dispatch(request, *args, **kwargs)

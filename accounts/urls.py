@@ -15,6 +15,13 @@ urlpatterns = [
         name='logout',
     ),
     path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('membros/', views.MemberListView.as_view(), name='member_list'),
+    path('membros/novo/', views.MemberCreateView.as_view(), name='member_create'),
+    path(
+        'membros/<int:pk>/editar/',
+        views.MemberUpdateView.as_view(),
+        name='member_update',
+    ),
     path(
         'password-reset/',
         auth_views.PasswordResetView.as_view(
