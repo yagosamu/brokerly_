@@ -8,6 +8,13 @@ from base.models import BaseModel
 class User(AbstractUser, BaseModel):
     username = None
     email = models.EmailField('email address', unique=True)
+    brokerage = models.ForeignKey(
+        'tenants.Brokerage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='members',
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

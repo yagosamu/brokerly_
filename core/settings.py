@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'widget_tweaks',
     'base',
+    'tenants',
     'accounts',
 ]
 
@@ -36,6 +37,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'tenants.middleware.TenantMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
