@@ -8,5 +8,6 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('corretora/', include('tenants.urls')),
     path('anexos/', include('documents.urls')),
+    path('clientes/', include('clients.urls')),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
 ]

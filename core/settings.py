@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'tenants',
     'accounts',
     'documents',
+    'clients',
 ]
 
 MIDDLEWARE = [
