@@ -1,0 +1,177 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if mode == 'create' %}Novo membro{% else %}Editar membro{% endif %} · Brokerly{% endblock %}
+{% block page_title %}{% if mode == 'create' %}Novo membro{% else %}Editar membro{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'accounts:member_list' %}">Equipe</a></li>
+<li class="breadcrumb-item">{% if mode == 'create' %}Adicionar{% else %}Editar{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'accounts:member_list' %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar para equipe
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">
+                    {% if mode == 'create' %}Cadastrar novo membro{% else %}Dados do membro{% endif %}
+                </h5>
+                <p class="fs-12 text-muted mb-0 mt-1">
+                    {% if mode == 'create' %}
+                    O membro receberá acesso ao Brokerly imediatamente com o e-mail e senha definidos abaixo.
+                    {% else %}
+                    Atualize as informações ou o perfil de acesso do membro.
+                    {% endif %}
+                </p>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 mb-3">
+                        {{ form.non_field_errors|first }}
+                    </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                Nome <span class="text-danger">*</span>
+                            </label>
+                            {{ form.first_name|add_class:"form-control"|attr:"placeholder:João" }}
+                            {% if form.first_name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.first_name.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                Sobrenome <span class="text-danger">*</span>
+                            </label>
+                            {{ form.last_name|add_class:"form-control"|attr:"placeholder:Silva" }}
+                            {% if form.last_name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.last_name.errors|first }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                E-mail <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email|add_class:"form-control"|attr:"placeholder:joao@empresa.com" }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">{{ form.email.errors|first }}</div>
+                            {% endif %}
+                            <small class="text-muted fs-11 d-block mt-1">O e-mail é usado para login no sistema.</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.role.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                Perfil de acesso <span class="text-danger">*</span>
+                            </label>
+                            {{ form.role|add_class:"form-select" }}
+                            {% if form.role.errors %}
+                            <div class="invalid-feedback d-block">{{ form.role.errors|first }}</div>
+                            {% endif %}
+                            <small class="text-muted fs-11 d-block mt-1">Define o que o membro pode fazer no sistema.</small>
+                        </div>
+
+                        {% if mode == 'update' and form.is_active %}
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                {{ form.is_active|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    Conta ativa
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if mode == 'create' %}
+                        <div class="col-12">
+                            <hr class="my-2">
+                            <h6 class="text-uppercase fs-11 text-muted mb-2">Senha inicial</h6>
+                            <p class="fs-12 text-muted">
+                                Defina uma senha temporária para o primeiro acesso. O membro pode trocar a senha depois pelo fluxo de recuperação.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                Senha <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password1|add_class:"form-control"|attr:"placeholder:••••••••" }}
+                            {% if form.password1.help_text %}
+                            <small class="text-muted fs-11 d-block mt-1">{{ form.password1.help_text|safe }}</small>
+                            {% endif %}
+                            {% if form.password1.errors %}
+                            <div class="invalid-feedback d-block">{{ form.password1.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+                                Confirmar senha <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password2|add_class:"form-control"|attr:"placeholder:••••••••" }}
+                            {% if form.password2.errors %}
+                            <div class="invalid-feedback d-block">{{ form.password2.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    <a href="{% url 'accounts:member_list' %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if mode == 'create' %}Cadastrar membro{% else %}Salvar alterações{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Sobre os perfis</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-3 fs-12">
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-soft-primary text-primary" style="min-width: 105px;">Administrador</span>
+                        <span class="text-muted">Controle total da corretora.</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-soft-info text-info" style="min-width: 105px;">Gerente</span>
+                        <span class="text-muted">Gestão da equipe, CRM, propostas e relatórios.</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-soft-success text-success" style="min-width: 105px;">Corretor</span>
+                        <span class="text-muted">Atende clientes, monta propostas e gerencia apólices.</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-soft-warning text-warning" style="min-width: 105px;">Agente</span>
+                        <span class="text-muted">Vende seguros pela corretora; acompanha sua comissão.</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-soft-warning text-warning" style="min-width: 105px;">Produtor</span>
+                        <span class="text-muted">Corretor final ligado a um agente ou direto à corretora.</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-gray-200 text-dark" style="min-width: 105px;">Operacional</span>
+                        <span class="text-muted">Anexos, endossos e apoio administrativo.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

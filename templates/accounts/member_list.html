@@ -1,0 +1,171 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Equipe · Brokerly{% endblock %}
+{% block page_title %}Equipe{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Configurações</li>
+<li class="breadcrumb-item">Equipe</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <span class="badge bg-soft-primary text-primary">
+        <i class="feather-user me-1"></i>
+        {{ active_count }} {% if plan.max_users %}/ {{ plan.max_users }}{% endif %} ativos
+    </span>
+    <a href="{% url 'accounts:member_create' %}" class="btn btn-sm btn-primary">
+        <i class="feather-plus me-1"></i>Novo membro
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .member-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(52, 84, 209, 0.12);
+        color: var(--brokerly-primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: var(--brokerly-font-weight-semibold);
+        font-size: 12px;
+    }
+    .member-row td { vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h5 class="card-title mb-0">Membros da corretora</h5>
+            <p class="fs-12 text-muted mb-0 mt-1">Quem tem acesso e qual perfil cada um exerce.</p>
+        </div>
+        <form method="get" class="d-flex gap-2 flex-wrap">
+            <div class="position-relative">
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Buscar por nome ou e-mail" style="min-width: 220px;">
+                <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+            </div>
+            <select name="role" class="form-select form-select-sm" style="min-width: 160px;">
+                <option value="">Todos os perfis</option>
+                {% for value, label in roles %}
+                <option value="{{ value }}" {% if selected_role == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-light-brand">
+                <i class="feather-filter me-1"></i>Filtrar
+            </button>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if members %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Membro</th>
+                        <th class="fs-11 text-uppercase text-muted">E-mail</th>
+                        <th class="fs-11 text-uppercase text-muted">Perfil</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr class="member-row">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="member-avatar">
+                                    {% if member.first_name %}{{ member.first_name|slice:":1" }}{% endif %}{% if member.last_name %}{{ member.last_name|slice:":1" }}{% endif %}{% if not member.first_name and not member.last_name %}{{ member.email|slice:":1"|upper }}{% endif %}
+                                </span>
+                                <div>
+                                    <div class="fw-bold text-dark">
+                                        {{ member.get_full_name|default:member.email }}
+                                    </div>
+                                    {% if member.id == request.user.id %}
+                                    <small class="fs-11 text-muted">Você</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted">{{ member.email }}</td>
+                        <td>
+                            {% if member.role == 'owner' %}
+                            <span class="badge bg-soft-primary text-primary">{{ member.get_role_display }}</span>
+                            {% elif member.role == 'manager' %}
+                            <span class="badge bg-soft-info text-info">{{ member.get_role_display }}</span>
+                            {% elif member.role == 'broker' %}
+                            <span class="badge bg-soft-success text-success">{{ member.get_role_display }}</span>
+                            {% elif member.role == 'agent' or member.role == 'producer' %}
+                            <span class="badge bg-soft-warning text-warning">{{ member.get_role_display }}</span>
+                            {% else %}
+                            <span class="badge bg-gray-200 text-dark">{{ member.get_role_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if member.is_active %}
+                            <span class="badge bg-soft-success text-success">Ativo</span>
+                            {% else %}
+                            <span class="badge bg-soft-danger text-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'accounts:member_update' member.id %}" class="btn btn-sm btn-light-brand" title="Editar">
+                                <i class="feather-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-user fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhum membro encontrado</h6>
+            <p class="fs-12 text-muted mb-3">
+                {% if q or selected_role %}
+                Ajuste a busca ou o filtro para ver outros resultados.
+                {% else %}
+                Convide o primeiro membro da equipe para começar.
+                {% endif %}
+            </p>
+            <a href="{% url 'accounts:member_create' %}" class="btn btn-sm btn-primary">
+                <i class="feather-plus me-1"></i>Novo membro
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} membros
+        </span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_role %}role={{ selected_role }}&{% endif %}page={{ page_obj.previous_page_number|default:1 }}">
+                        <i class="feather-arrow-left"></i>
+                    </a>
+                </li>
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }}</span>
+                </li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_role %}role={{ selected_role }}&{% endif %}page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}">
+                        <i class="feather-arrow-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
