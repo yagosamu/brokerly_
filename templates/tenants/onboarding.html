@@ -1,0 +1,100 @@
+{% extends 'base_auth.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Cadastrar corretora · Brokerly{% endblock %}
+
+{% block auth_title %}Cadastre sua corretora{% endblock %}
+{% block auth_subtitle %}Para começar a usar o Brokerly, informe os dados básicos da sua corretora. Você poderá ajustá-los depois.{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .onboarding-card { max-width: 540px; }
+    .plan-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: var(--brokerly-font-weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--brokerly-success);
+        background: rgba(23, 198, 102, 0.12);
+    }
+</style>
+{% endblock %}
+
+{% block auth_content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">
+        {{ form.non_field_errors|first }}
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label for="{{ form.legal_name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+            Razão social <span class="text-danger">*</span>
+        </label>
+        {{ form.legal_name|add_class:"form-control"|attr:"placeholder:Corretora Exemplo LTDA"|attr:"autofocus" }}
+        {% if form.legal_name.errors %}
+        <div class="invalid-feedback d-block">{{ form.legal_name.errors|first }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.trade_name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+            Nome fantasia
+        </label>
+        {{ form.trade_name|add_class:"form-control"|attr:"placeholder:Corretora Exemplo" }}
+        {% if form.trade_name.errors %}
+        <div class="invalid-feedback d-block">{{ form.trade_name.errors|first }}</div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.cnpj.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">
+            CNPJ <span class="text-danger">*</span>
+        </label>
+        {{ form.cnpj|add_class:"form-control"|attr:"placeholder:00.000.000/0000-00"|attr:"inputmode:numeric" }}
+        {% if form.cnpj.errors %}
+        <div class="invalid-feedback d-block">{{ form.cnpj.errors|first }}</div>
+        {% endif %}
+        <small class="text-muted fs-11 d-block mt-1">Apenas números — formatamos automaticamente.</small>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-7">
+            <label for="{{ form.email.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">E-mail comercial</label>
+            {{ form.email|add_class:"form-control"|attr:"placeholder:contato@empresa.com" }}
+            {% if form.email.errors %}
+            <div class="invalid-feedback d-block">{{ form.email.errors|first }}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-5">
+            <label for="{{ form.phone.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Telefone</label>
+            {{ form.phone|add_class:"form-control"|attr:"placeholder:(11) 99999-9999" }}
+            {% if form.phone.errors %}
+            <div class="invalid-feedback d-block">{{ form.phone.errors|first }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mt-4 mb-3">
+        <span class="plan-pill"><i class="feather-check"></i>Plano Free</span>
+        <span class="fs-11 text-muted">3 usuários · 50 clientes · 100 apólices</span>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Criar corretora</button>
+</form>
+{% endblock %}
+
+{% block auth_footer %}
+<div class="auth-footer">
+    <span>Não é seu acesso? <a href="{% url 'accounts:logout' %}">Sair</a></span>
+</div>
+{% endblock %}

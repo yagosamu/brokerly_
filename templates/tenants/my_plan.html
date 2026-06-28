@@ -1,0 +1,238 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Meu plano · Brokerly{% endblock %}
+{% block page_title %}Meu plano{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Meu plano</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .plan-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        background: var(--brokerly-surface);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .plan-card:hover { box-shadow: var(--brokerly-shadow-md); }
+    .plan-card.is-current {
+        border-color: var(--brokerly-primary);
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+    }
+    .plan-card.is-coming-soon { opacity: 0.65; }
+    .plan-card-header {
+        padding: 20px 24px 12px;
+        border-bottom: 1px solid var(--brokerly-border);
+    }
+    .plan-card-body { padding: 20px 24px; flex: 1; }
+    .plan-card-footer { padding: 16px 24px 24px; }
+    .plan-price {
+        font-size: 1.75rem;
+        font-weight: var(--brokerly-font-weight-bold);
+        color: var(--brokerly-text-strong);
+        line-height: 1;
+    }
+    .plan-price-suffix { color: var(--brokerly-text-muted); font-size: 0.85rem; font-weight: 500; }
+    .plan-feature {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.84rem;
+        margin-bottom: 8px;
+        color: var(--brokerly-text);
+    }
+    .plan-feature i { color: var(--brokerly-success); margin-top: 2px; }
+    .plan-badge {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 999px;
+    }
+    .plan-badge.current { background: rgba(52, 84, 209, 0.12); color: var(--brokerly-primary); }
+    .plan-badge.soon { background: rgba(107, 120, 133, 0.12); color: var(--brokerly-text); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not brokerage %}
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <div class="card stretch stretch-full">
+            <div class="card-body text-center p-5">
+                <i class="feather-briefcase fs-1 text-gray-500 d-block mb-2"></i>
+                <h5 class="mb-1">Você ainda não cadastrou sua corretora</h5>
+                <p class="fs-12 text-muted mb-4">
+                    Para visualizar seu plano e ativar o sistema, cadastre primeiro a corretora.
+                </p>
+                <a href="{% url 'tenants:onboarding' %}" class="btn btn-primary">
+                    <i class="feather-plus me-1"></i>Cadastrar corretora
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-4">
+    <div class="col-12 col-lg-8">
+        <div class="card stretch stretch-full mb-0">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="card-title mb-0">Assinatura ativa</h5>
+                    <p class="fs-12 text-muted mb-0 mt-1">{{ brokerage.legal_name }} · CNPJ {{ brokerage.cnpj }}</p>
+                </div>
+                {% if subscription %}
+                {% if subscription.status == 'active' %}
+                <span class="badge bg-soft-success text-success">{{ subscription.get_status_display }}</span>
+                {% elif subscription.status == 'past_due' %}
+                <span class="badge bg-soft-warning text-warning">{{ subscription.get_status_display }}</span>
+                {% else %}
+                <span class="badge bg-soft-danger text-danger">{{ subscription.get_status_display }}</span>
+                {% endif %}
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="fs-11 text-uppercase text-muted">Plano</div>
+                        <h4 class="mb-0 mt-1 fw-bold">{{ subscription.plan.name }}</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fs-11 text-uppercase text-muted">Início</div>
+                        <h6 class="mb-0 mt-1">{{ subscription.started_at|date:'d/m/Y' }}</h6>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fs-11 text-uppercase text-muted">Renovação</div>
+                        <h6 class="mb-0 mt-1">
+                            {% if subscription.expires_at %}{{ subscription.expires_at|date:'d/m/Y' }}{% else %}—{% endif %}
+                        </h6>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="fs-11 text-uppercase text-muted">Usuários</div>
+                        <h6 class="mb-0 mt-1">
+                            até {{ subscription.plan.max_users|default:'∞' }}
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fs-11 text-uppercase text-muted">Clientes</div>
+                        <h6 class="mb-0 mt-1">
+                            até {{ subscription.plan.max_clients|default:'∞' }}
+                        </h6>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fs-11 text-uppercase text-muted">Apólices</div>
+                        <h6 class="mb-0 mt-1">
+                            até {{ subscription.plan.max_policies|default:'∞' }}
+                        </h6>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning py-2 mb-0">
+                    Não encontramos uma assinatura ativa. Entre em contato com o suporte.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card stretch stretch-full mb-0">
+            <div class="card-header">
+                <h5 class="card-title">Precisa de mais?</h5>
+            </div>
+            <div class="card-body">
+                <p class="fs-12 text-muted mb-3">
+                    Estamos preparando planos maiores para corretoras que precisam de mais usuários,
+                    clientes e automações de IA.
+                </p>
+                <a href="#planos-disponiveis" class="btn btn-light-brand w-100">
+                    <i class="feather-arrow-right me-1"></i>Comparar planos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="planos-disponiveis" class="row mb-3">
+    <div class="col-12 d-flex align-items-end justify-content-between">
+        <div>
+            <h5 class="mb-0">Planos disponíveis</h5>
+            <p class="fs-12 text-muted mb-0 mt-1">Os planos pagos estão em desenvolvimento — em breve.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for plan in plans %}
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="plan-card {% if subscription and subscription.plan_id == plan.id %}is-current{% elif not plan.is_available %}is-coming-soon{% endif %}">
+            {% if subscription and subscription.plan_id == plan.id %}
+            <span class="plan-badge current">Plano atual</span>
+            {% elif not plan.is_available %}
+            <span class="plan-badge soon">Em breve</span>
+            {% endif %}
+
+            <div class="plan-card-header">
+                <h5 class="mb-2">{{ plan.name }}</h5>
+                <div>
+                    <span class="plan-price">
+                        {% if plan.price == 0 %}Grátis{% else %}R$ {{ plan.price|floatformat:0 }}{% endif %}
+                    </span>
+                    {% if plan.price > 0 %}<span class="plan-price-suffix">/mês</span>{% endif %}
+                </div>
+            </div>
+
+            <div class="plan-card-body">
+                <div class="plan-feature">
+                    <i class="feather-check"></i>
+                    <span>até <strong>{{ plan.max_users|default:'∞' }}</strong> usuários</span>
+                </div>
+                <div class="plan-feature">
+                    <i class="feather-check"></i>
+                    <span>até <strong>{{ plan.max_clients|default:'∞' }}</strong> clientes</span>
+                </div>
+                <div class="plan-feature">
+                    <i class="feather-check"></i>
+                    <span>até <strong>{{ plan.max_policies|default:'∞' }}</strong> apólices</span>
+                </div>
+                {% for feature in plan.features %}
+                <div class="plan-feature">
+                    <i class="feather-check"></i>
+                    <span>{{ feature }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="plan-card-footer">
+                {% if subscription and subscription.plan_id == plan.id %}
+                <button type="button" class="btn btn-light-brand w-100" disabled>Plano atual</button>
+                {% elif plan.is_available %}
+                <button type="button" class="btn btn-primary w-100" disabled>Selecionar</button>
+                {% else %}
+                <button type="button" class="btn btn-light-brand w-100" disabled>Em breve</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning">Nenhum plano cadastrado.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
