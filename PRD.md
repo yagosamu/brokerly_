@@ -3425,11 +3425,11 @@ flowchart LR
 
 ### Sprint 5 — Multi Tenant (núcleo)
 **Objetivo:** infraestrutura de isolamento por tenant.
-- [ ] App `tenants` com model `Brokerage` (campos da seção 14.2)
-- [ ] `TenantMiddleware` (resolve `request.tenant = user.brokerage`)
-- [ ] `TenantQuerysetMixin` e `RoleRequiredMixin` em `base`
-- [ ] `TenantManager.for_tenant()` + contextvar `current_tenant`
-- [ ] Vincular `User.brokerage`
+- [x] App `tenants` com model `Brokerage` (campos da seção 14.2)
+- [x] `TenantMiddleware` (resolve `request.tenant = user.brokerage`)
+- [x] `TenantQuerysetMixin` e `RoleRequiredMixin` em `base`
+- [x] `TenantManager.for_tenant()` + contextvar `current_tenant`
+- [x] Vincular `User.brokerage`
 
 **Entrega:** `request.tenant` disponível; mixins prontos para filtrar por tenant.
 
@@ -3784,4 +3784,3 @@ O Brokerly é um SaaS multi tenant para corretoras de seguros cuja **espinha dor
 4. Revisar, corrigir e seguir sequencialmente até a Sprint 28 (a Sprint 29, de dados de demonstração, pode ser executada a partir da Sprint 24 sempre que quiser popular o ambiente para demos).
 
 > Este documento cresce, nunca diminui: novas features viram novas subseções na seção de funcionalidades e novas sprints na seção 53, com a versão do cabeçalho incrementada.
-
