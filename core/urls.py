@@ -10,5 +10,6 @@ urlpatterns = [
     path('anexos/', include('documents.urls')),
     path('clientes/', include('clients.urls')),
     path('', include('insurers.urls')),
+    path('', include('insurance.urls')),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
 ]
