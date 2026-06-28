@@ -1,0 +1,125 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Seguradoras · Brokerly{% endblock %}
+{% block page_title %}Seguradoras{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Catálogos</li>
+<li class="breadcrumb-item">Seguradoras</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'insurers:insurer_create' %}" class="btn btn-sm btn-primary">
+    <i class="feather-plus me-1"></i>Nova seguradora
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h5 class="card-title mb-0">Seguradoras parceiras</h5>
+            <p class="fs-12 text-muted mb-0 mt-1">{{ total }} seguradora{{ total|pluralize:'s' }} no catálogo.</p>
+        </div>
+        <form method="get" class="d-flex gap-2 flex-wrap">
+            <div class="position-relative">
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Buscar nome, CNPJ ou SUSEP" style="min-width: 260px;">
+                <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+            </div>
+            <select name="status" class="form-select form-select-sm" style="min-width: 140px;">
+                <option value="">Todas</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Ativas</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inativas</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-light-brand">
+                <i class="feather-filter me-1"></i>Filtrar
+            </button>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if insurers %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Razão social</th>
+                        <th class="fs-11 text-uppercase text-muted">CNPJ</th>
+                        <th class="fs-11 text-uppercase text-muted">SUSEP</th>
+                        <th class="fs-11 text-uppercase text-muted">Contato</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for insurer in insurers %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-2 bg-soft-primary text-primary d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;">
+                                    <i class="feather-briefcase"></i>
+                                </div>
+                                <div class="fw-bold text-dark">{{ insurer.name }}</div>
+                            </div>
+                        </td>
+                        <td class="fs-12 text-muted">{{ insurer.cnpj }}</td>
+                        <td class="fs-12 text-muted">{{ insurer.susep_code|default:'—' }}</td>
+                        <td class="fs-12">
+                            {% if insurer.email %}<div>{{ insurer.email }}</div>{% endif %}
+                            {% if insurer.phone %}<div class="text-muted">{{ insurer.phone }}</div>{% endif %}
+                            {% if not insurer.email and not insurer.phone %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if insurer.is_active %}
+                            <span class="badge bg-soft-success text-success">Ativa</span>
+                            {% else %}
+                            <span class="badge bg-soft-danger text-danger">Inativa</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'insurers:insurer_update' insurer.id %}" class="btn btn-sm btn-light-brand" title="Editar">
+                                <i class="feather-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-briefcase fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhuma seguradora cadastrada</h6>
+            <p class="fs-12 text-muted mb-3">
+                {% if q or selected_status %}
+                Ajuste a busca ou o filtro para ver outros resultados.
+                {% else %}
+                Cadastre a primeira seguradora parceira para começar a emitir propostas.
+                {% endif %}
+            </p>
+            <a href="{% url 'insurers:insurer_create' %}" class="btn btn-sm btn-primary">
+                <i class="feather-plus me-1"></i>Nova seguradora
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
