@@ -3466,11 +3466,11 @@ flowchart LR
 
 ### Sprint 7 — Usuários e Permissões
 **Objetivo:** roles e gestão de equipe.
-- [ ] Enum `Role` em `User.role`
-- [ ] Grupos/permissões por role (nativo Django)
-- [ ] CRUD de usuários do tenant (owner/manager)
-- [ ] `RoleRequiredMixin` aplicado nas áreas restritas
-- [ ] Respeitar limite `Plan.max_users`
+- [x] Enum `Role` em `User.role`
+- [x] Grupos/permissões por role (nativo Django)
+- [x] CRUD de usuários do tenant (owner/manager)
+- [x] `RoleRequiredMixin` aplicado nas áreas restritas
+- [x] Respeitar limite `Plan.max_users`
 
 **Entrega:** owner gerencia usuários e papéis dentro da corretora.
 
