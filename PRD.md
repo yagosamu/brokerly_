@@ -3524,10 +3524,10 @@ flowchart LR
 
 ### Sprint 10 — Seguradoras e Ramos
 **Objetivo:** catálogos tenant-aware.
-- [ ] App `insurers`: models `Insurer` e `LineOfBusiness`
-- [ ] CRUDs isolados por tenant
-- [ ] Seeds padrão de ramos no onboarding (revisar Sprint 6)
-- [ ] Selects de FK filtrando ativos do tenant
+- [x] App `insurers`: models `Insurer` e `LineOfBusiness`
+- [x] CRUDs isolados por tenant
+- [x] Seeds padrão de ramos no onboarding (revisar Sprint 6)
+- [x] Selects de FK filtrando ativos do tenant
 
 **Entrega:** seguradoras e ramos disponíveis para propostas/apólices.
 
