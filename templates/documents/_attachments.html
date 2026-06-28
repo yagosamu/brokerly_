@@ -1,0 +1,139 @@
+{% comment %}
+Partial reutilizável de anexos protegidos.
+
+Variáveis esperadas no contexto:
+- content_type_id (int)         ID do ContentType da entidade pai (Client, Policy, etc.)
+- object_id (int)               PK da entidade pai
+- documents (queryset)          Lista de Document já filtrada pelo tenant
+- can_upload (bool, default False)   Se renderiza o form de upload (owner/manager/broker)
+- can_delete (bool, default False)   Se renderiza o botão de excluir por linha (owner/manager)
+- next_url (str, default '')         URL para onde voltar após upload/delete síncrono
+
+Uso:
+    {% include 'documents/_attachments.html' with content_type_id=ctype.id object_id=client.id documents=client_documents can_upload=True can_delete=is_manager next_url=request.path %}
+{% endcomment %}
+
+<div class="card stretch stretch-full" id="attachments-card">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h5 class="card-title mb-0">
+                <i class="feather-file-text me-1"></i>Anexos
+            </h5>
+            <p class="fs-12 text-muted mb-0 mt-1">
+                Documentos vinculados a este registro · até 10 MB por arquivo.
+            </p>
+        </div>
+        <span class="badge bg-soft-primary text-primary">
+            {{ documents|length }} arquivo{{ documents|length|pluralize:'s' }}
+        </span>
+    </div>
+
+    {% if can_upload %}
+    <div class="card-body border-bottom">
+        <form method="post" enctype="multipart/form-data" action="{% url 'documents:upload' %}" class="row g-2 align-items-end">
+            {% csrf_token %}
+            <input type="hidden" name="content_type_id" value="{{ content_type_id }}">
+            <input type="hidden" name="object_id" value="{{ object_id }}">
+            <input type="hidden" name="next" value="{{ next_url|default:request.path }}">
+
+            <div class="col-md-5">
+                <label class="form-label fs-12 text-uppercase text-muted">Arquivo</label>
+                <input type="file" name="file" class="form-control" required
+                       accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.doc,.docx,.xls,.xlsx,.csv,.txt">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fs-12 text-uppercase text-muted">Descrição (opcional)</label>
+                <input type="text" name="description" class="form-control" maxlength="255"
+                       placeholder="Ex.: cópia do CNH, comprovante de residência">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="feather-plus me-1"></i>Enviar
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="card-body p-0">
+        {% if documents %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Arquivo</th>
+                        <th class="fs-11 text-uppercase text-muted">Descrição</th>
+                        <th class="fs-11 text-uppercase text-muted">Enviado por</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Tamanho</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if 'pdf' in doc.mime_type %}
+                                <i class="feather-file-text text-danger fs-5"></i>
+                                {% elif 'image' in doc.mime_type %}
+                                <i class="feather-image text-info fs-5"></i>
+                                {% elif 'spreadsheet' in doc.mime_type or 'excel' in doc.mime_type or 'csv' in doc.mime_type %}
+                                <i class="feather-layers text-success fs-5"></i>
+                                {% elif 'word' in doc.mime_type or 'document' in doc.mime_type %}
+                                <i class="feather-file text-primary fs-5"></i>
+                                {% else %}
+                                <i class="feather-file text-muted fs-5"></i>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 280px;" title="{{ doc.original_name }}">
+                                        {{ doc.original_name }}
+                                    </div>
+                                    <small class="fs-11 text-muted">{{ doc.created_at|date:'d/m/Y H:i' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="fs-12 text-muted">
+                            {{ doc.description|default:'—' }}
+                        </td>
+                        <td class="fs-12">
+                            {% if doc.uploaded_by %}
+                            {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.email }}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fs-12 text-muted">{{ doc.size_kb }} KB</td>
+                        <td class="text-end">
+                            <a href="{% url 'documents:download' doc.id %}" class="btn btn-sm btn-light-brand" title="Baixar">
+                                <i class="feather-download"></i>
+                            </a>
+                            {% if can_delete %}
+                            <form method="post" action="{% url 'documents:delete' doc.id %}" class="d-inline" onsubmit="return confirm('Excluir o anexo {{ doc.original_name|escapejs }}?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next_url|default:request.path }}">
+                                <button type="submit" class="btn btn-sm btn-light-brand text-danger" title="Excluir">
+                                    <i class="feather-trash-2"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-4">
+            <i class="feather-file-plus fs-2 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1 fs-14">Nenhum anexo</h6>
+            <p class="fs-12 text-muted mb-0">
+                {% if can_upload %}
+                Adicione documentos relacionados a este registro usando o formulário acima.
+                {% else %}
+                Documentos vinculados aparecerão aqui.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
