@@ -3543,11 +3543,11 @@ flowchart LR
 
 ### Sprint 11 — Propostas
 **Objetivo:** cadastro de propostas com itens básicos.
-- [ ] App `insurance`: model `Proposal` (+ `CoveredItem` base)
-- [ ] CRUD com selects filtrados por tenant
-- [ ] Gestão de itens cobertos inline na proposta
-- [ ] Anexos protegidos na proposta
-- [ ] Filtros (status, seguradora, ramo, produtor, período)
+- [x] App `insurance`: model `Proposal` (+ `CoveredItem` base)
+- [x] CRUD com selects filtrados por tenant
+- [x] Gestão de itens cobertos inline na proposta
+- [x] Anexos protegidos na proposta
+- [x] Filtros (status, seguradora, ramo, produtor, período)
 
 **Entrega:** propostas com itens e anexos, isoladas por tenant.
 
