@@ -3603,10 +3603,10 @@ flowchart LR
 
 ### Sprint 15 — Endossos
 **Objetivo:** alterações em apólices.
-- [ ] Model `Endorsement` (tipos: increase/decrease/cancellation/data_change)
-- [ ] CRUD vinculado à apólice; `endorsement_number` único por apólice
-- [ ] Endosso de cancelamento atualiza status da apólice
-- [ ] Histórico de endossos no detalhe da apólice
+- [x] Model `Endorsement` (tipos: increase/decrease/cancellation/data_change)
+- [x] CRUD vinculado à apólice; `endorsement_number` único por apólice
+- [x] Endosso de cancelamento atualiza status da apólice
+- [x] Histórico de endossos no detalhe da apólice
 
 **Entrega:** endossos registrados e refletindo na apólice.
 
