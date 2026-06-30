@@ -1,0 +1,300 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if mode == 'create' %}Nova proposta{% else %}Editar proposta{% endif %} · Brokerly{% endblock %}
+{% block page_title %}{% if mode == 'create' %}Nova proposta{% else %}Editar proposta {% if object %}#{{ object.number }}{% endif %}{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'insurance:proposal_list' %}">Propostas</a></li>
+<li class="breadcrumb-item">{% if mode == 'create' %}Cadastrar{% else %}Editar{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% if mode == 'update' and object %}{% url 'insurance:proposal_detail' object.id %}{% else %}{% url 'insurance:proposal_list' %}{% endif %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .item-row {
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        padding: 16px;
+        margin-bottom: 12px;
+        position: relative;
+    }
+    .item-row.is-deleted { opacity: 0.45; }
+    .item-row-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .item-row-index {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--brokerly-text-muted);
+        font-weight: var(--brokerly-font-weight-semibold);
+    }
+    .item-row .form-label { margin-bottom: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate id="proposal-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ form.non_field_errors|first }}</div>
+    {% endif %}
+    {% if formset.non_form_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ formset.non_form_errors|first }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Dados gerais</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.number.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Número <span class="text-danger">*</span></label>
+                            {{ form.number|add_class:"form-control"|attr:"placeholder:2026-001" }}
+                            {% if form.number.errors %}<div class="invalid-feedback d-block">{{ form.number.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <label for="{{ form.client.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Cliente <span class="text-danger">*</span></label>
+                            {{ form.client|add_class:"form-select" }}
+                            {% if form.client.errors %}<div class="invalid-feedback d-block">{{ form.client.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.insurer.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Seguradora <span class="text-danger">*</span></label>
+                            {{ form.insurer|add_class:"form-select" }}
+                            {% if form.insurer.errors %}<div class="invalid-feedback d-block">{{ form.insurer.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.line_of_business.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Ramo <span class="text-danger">*</span></label>
+                            {{ form.line_of_business|add_class:"form-select" }}
+                            {% if form.line_of_business.errors %}<div class="invalid-feedback d-block">{{ form.line_of_business.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Valores e vigência</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.net_premium.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Prêmio líquido (R$)</label>
+                            {{ form.net_premium|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.net_premium.errors %}<div class="invalid-feedback d-block">{{ form.net_premium.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.iof.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">IOF (R$)</label>
+                            {{ form.iof|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.iof.errors %}<div class="invalid-feedback d-block">{{ form.iof.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.total_premium.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Prêmio total (R$)</label>
+                            {{ form.total_premium|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.total_premium.errors %}<div class="invalid-feedback d-block">{{ form.total_premium.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.proposed_start_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Início da vigência</label>
+                            {{ form.proposed_start_date|add_class:"form-control" }}
+                            {% if form.proposed_start_date.errors %}<div class="invalid-feedback d-block">{{ form.proposed_start_date.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.proposed_end_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Fim da vigência</label>
+                            {{ form.proposed_end_date|add_class:"form-control" }}
+                            {% if form.proposed_end_date.errors %}<div class="invalid-feedback d-block">{{ form.proposed_end_date.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.payment_terms.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Forma de pagamento</label>
+                            {{ form.payment_terms|add_class:"form-control"|attr:"placeholder:Ex.: 12x no cartão" }}
+                            {% if form.payment_terms.errors %}<div class="invalid-feedback d-block">{{ form.payment_terms.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">Itens cobertos</h5>
+                        <p class="fs-12 text-muted mb-0 mt-1">Adicione os bens, pessoas ou serviços cobertos por esta proposta.</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light-brand" id="add-item">
+                        <i class="feather-plus me-1"></i>Adicionar item
+                    </button>
+                </div>
+                <div class="card-body">
+                    {{ formset.management_form }}
+                    <div id="items-container">
+                        {% for item_form in formset %}
+                        <div class="item-row" data-form-index="{{ forloop.counter0 }}">
+                            {% if item_form.instance.pk %}{{ item_form.id }}{% endif %}
+                            <div class="item-row-header">
+                                <span class="item-row-index">Item {{ forloop.counter }}</span>
+                                {% if formset.can_delete %}
+                                <label class="d-flex align-items-center gap-1 fs-12 text-danger mb-0">
+                                    {{ item_form.DELETE|add_class:"form-check-input" }}
+                                    Remover
+                                </label>
+                                {% endif %}
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label fs-11 text-uppercase text-muted">Tipo</label>
+                                    {{ item_form.item_type|add_class:"form-select form-select-sm" }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fs-11 text-uppercase text-muted">Descrição</label>
+                                    {{ item_form.description|add_class:"form-control form-control-sm" }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fs-11 text-uppercase text-muted">Identificador</label>
+                                    {{ item_form.identifier|add_class:"form-control form-control-sm" }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fs-11 text-uppercase text-muted">Importância (R$)</label>
+                                    {{ item_form.insured_amount|add_class:"form-control form-control-sm"|attr:"step:0.01" }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fs-11 text-uppercase text-muted">Atributos (JSON)</label>
+                                    {{ item_form.attributes|add_class:"form-control form-control-sm" }}
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label fs-11 text-uppercase text-muted">Coberturas (JSON)</label>
+                                    {{ item_form.coverages|add_class:"form-control form-control-sm" }}
+                                </div>
+                            </div>
+                            {% if item_form.errors %}
+                            <div class="mt-2">
+                                {% for field, errors in item_form.errors.items %}
+                                <div class="invalid-feedback d-block">{{ field }}: {{ errors|first }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Observações</h5>
+                </div>
+                <div class="card-body">
+                    {{ form.notes|add_class:"form-control"|attr:"rows:3"|attr:"placeholder:Notas internas sobre a proposta." }}
+                    {% if form.notes.errors %}<div class="invalid-feedback d-block">{{ form.notes.errors|first }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Status atual</h5>
+                </div>
+                <div class="card-body">
+                    {{ form.status|add_class:"form-select" }}
+                    <p class="fs-12 text-muted mb-0 mt-2">
+                        Comece em <strong>Rascunho</strong> e avance conforme a negociação. "Convertida em apólice" é definido automaticamente ao gerar a apólice.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Dicas</h5>
+                </div>
+                <div class="card-body fs-12 text-muted">
+                    <p class="mb-2"><strong class="text-dark">Número</strong> é único na sua corretora — use sua convenção (ex.: 2026-001).</p>
+                    <p class="mb-2"><strong class="text-dark">Cliente, seguradora e ramo</strong> só listam os ativos do seu tenant.</p>
+                    <p class="mb-0"><strong class="text-dark">Anexos</strong> podem ser enviados depois, na tela de detalhe.</p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-body d-flex justify-content-end gap-2">
+                    <a href="{% if mode == 'update' and object %}{% url 'insurance:proposal_detail' object.id %}{% else %}{% url 'insurance:proposal_list' %}{% endif %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if mode == 'create' %}Salvar proposta{% else %}Salvar alterações{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var container = document.getElementById('items-container');
+    var addBtn = document.getElementById('add-item');
+    var totalForms = document.getElementById('id_covered_items-TOTAL_FORMS');
+    if (!container || !addBtn || !totalForms) return;
+
+    var template = container.querySelector('.item-row');
+    if (!template) return;
+
+    function reindex() {
+        var rows = container.querySelectorAll('.item-row');
+        rows.forEach(function(row, index) {
+            row.setAttribute('data-form-index', index);
+            row.querySelector('.item-row-index').textContent = 'Item ' + (index + 1);
+            row.querySelectorAll('input, select, textarea, label').forEach(function(el) {
+                ['name', 'id', 'for'].forEach(function(attr) {
+                    var val = el.getAttribute(attr);
+                    if (val) {
+                        el.setAttribute(attr, val.replace(/covered_items-\d+-/g, 'covered_items-' + index + '-'));
+                    }
+                });
+            });
+        });
+        totalForms.value = rows.length;
+    }
+
+    addBtn.addEventListener('click', function() {
+        var newRow = template.cloneNode(true);
+        newRow.querySelectorAll('input, select, textarea').forEach(function(el) {
+            if (el.type === 'checkbox') {
+                el.checked = false;
+            } else if (el.tagName === 'SELECT') {
+                el.selectedIndex = 0;
+            } else if (!el.name || !el.name.endsWith('-id')) {
+                el.value = '';
+            } else {
+                el.value = '';
+            }
+        });
+        container.appendChild(newRow);
+        reindex();
+    });
+
+    container.addEventListener('change', function(e) {
+        if (e.target.matches('input[type="checkbox"][name$="-DELETE"]')) {
+            var row = e.target.closest('.item-row');
+            if (row) row.classList.toggle('is-deleted', e.target.checked);
+        }
+    });
+
+    container.querySelectorAll('input[type="checkbox"][name$="-DELETE"]:checked').forEach(function(cb) {
+        var row = cb.closest('.item-row');
+        if (row) row.classList.add('is-deleted');
+    });
+})();
+</script>
+{% endblock %}
