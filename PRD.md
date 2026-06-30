@@ -3563,12 +3563,12 @@ flowchart LR
 
 ### Sprint 12 — Apólices + Geração a partir de Proposta
 **Objetivo:** apólices e o serviço de geração.
-- [ ] Model `Policy` (+ relação com `Proposal`)
-- [ ] CRUD de apólices com filtros
-- [ ] `insurance/services.py::generate_policy_from_proposal` (transação)
-- [ ] Botão "Gerar apólice" na proposta (copia dados, clona itens, `policy_number` obrigatório)
-- [ ] Marcar proposta como `converted`; bloquear 2ª geração
-- [ ] Gerar `Commission` na criação da apólice (placeholder até Sprint 17)
+- [x] Model `Policy` (+ relação com `Proposal`)
+- [x] CRUD de apólices com filtros
+- [x] `insurance/services.py::generate_policy_from_proposal` (transação)
+- [x] Botão "Gerar apólice" na proposta (copia dados, clona itens, `policy_number` obrigatório)
+- [x] Marcar proposta como `converted`; bloquear 2ª geração
+- [x] Gerar `Commission` na criação da apólice (placeholder até Sprint 17)
 
 **Entrega:** apólice criada a partir da proposta com um clique.
 
