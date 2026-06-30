@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'clients',
     'insurers',
     'insurance',
+    'claims',
 ]
 
 MIDDLEWARE = [
