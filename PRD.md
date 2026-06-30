@@ -3584,10 +3584,10 @@ flowchart LR
 
 ### Sprint 13 — Itens Cobertos (refino)
 **Objetivo:** itens dinâmicos por tipo.
-- [ ] `CheckConstraint` (exatamente um entre proposal/policy)
-- [ ] Forms dinâmicos por `item_type` (auto/property/fleet/travel/life/equipment/other)
-- [ ] `attributes` e `coverages` (JSONB) por tipo
-- [ ] Validação de importância segurada e coberturas
+- [x] `CheckConstraint` (exatamente um entre proposal/policy)
+- [x] Forms dinâmicos por `item_type` (auto/property/fleet/travel/life/equipment/other)
+- [x] `attributes` e `coverages` (JSONB) por tipo
+- [x] Validação de importância segurada e coberturas
 
 **Entrega:** itens cobertos completos e específicos por tipo.
 
