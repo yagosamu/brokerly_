@@ -1,0 +1,201 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Editar sinistro{% else %}Novo sinistro{% endif %} · Brokerly{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Editar sinistro {% if object %}#{{ object.claim_number }}{% endif %}{% else %}Novo sinistro{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'claims:claim_list' %}">Sinistros</a></li>
+<li class="breadcrumb-item">{% if form.instance.pk %}Editar{% else %}Cadastrar{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% if form.instance.pk %}{% url 'claims:claim_detail' object.id %}{% else %}{% url 'claims:claim_list' %}{% endif %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate id="claim-form">
+    {% csrf_token %}
+    <script id="policy-items-map" type="application/json">{{ form.policy_to_items_json|safe }}</script>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ form.non_field_errors|first }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Identificação</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.claim_number.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Número <span class="text-danger">*</span></label>
+                            {{ form.claim_number|add_class:"form-control"|attr:"placeholder:SIN-2026-001" }}
+                            {% if form.claim_number.errors %}<div class="invalid-feedback d-block">{{ form.claim_number.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <label for="{{ form.policy.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Apólice <span class="text-danger">*</span></label>
+                            {{ form.policy|add_class:"form-select"|attr:"id:id_policy" }}
+                            {% if form.policy.errors %}<div class="invalid-feedback d-block">{{ form.policy.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label for="{{ form.covered_item.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Item coberto <span class="text-danger">*</span></label>
+                            {{ form.covered_item|add_class:"form-select"|attr:"id:id_covered_item" }}
+                            {% if form.covered_item.errors %}<div class="invalid-feedback d-block">{{ form.covered_item.errors|first }}</div>{% endif %}
+                            <small class="text-muted fs-11 d-block mt-1">Opções filtradas conforme a apólice selecionada.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Datas e valores</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.occurrence_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Data da ocorrência <span class="text-danger">*</span></label>
+                            {{ form.occurrence_date|add_class:"form-control" }}
+                            {% if form.occurrence_date.errors %}<div class="invalid-feedback d-block">{{ form.occurrence_date.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.notice_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Data do aviso <span class="text-danger">*</span></label>
+                            {{ form.notice_date|add_class:"form-control" }}
+                            {% if form.notice_date.errors %}<div class="invalid-feedback d-block">{{ form.notice_date.errors|first }}</div>{% endif %}
+                            <small class="text-muted fs-11 d-block mt-1">Não pode ser anterior à ocorrência.</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.status.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Status</label>
+                            {{ form.status|add_class:"form-select" }}
+                            {% if form.status.errors %}<div class="invalid-feedback d-block">{{ form.status.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.claimed_amount.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Valor reclamado (R$)</label>
+                            {{ form.claimed_amount|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.claimed_amount.errors %}<div class="invalid-feedback d-block">{{ form.claimed_amount.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.approved_amount.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Valor aprovado (R$)</label>
+                            {{ form.approved_amount|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.approved_amount.errors %}<div class="invalid-feedback d-block">{{ form.approved_amount.errors|first }}</div>{% endif %}
+                            <small class="text-muted fs-11 d-block mt-1">Preenchido quando a seguradora libera o pagamento.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Descrição da ocorrência</h5>
+                </div>
+                <div class="card-body">
+                    {{ form.description|add_class:"form-control"|attr:"rows:4"|attr:"placeholder:Detalhe o que aconteceu, locais, terceiros envolvidos, prejuízos." }}
+                    {% if form.description.errors %}<div class="invalid-feedback d-block">{{ form.description.errors|first }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Workflow</h5>
+                </div>
+                <div class="card-body fs-12 text-muted">
+                    <p class="mb-2"><span class="badge bg-soft-info text-info">Aberto</span> ao registrar o sinistro.</p>
+                    <p class="mb-2"><span class="badge bg-soft-warning text-warning">Em análise</span> com a seguradora.</p>
+                    <p class="mb-2"><span class="badge bg-soft-success text-success">Aprovado</span> / <span class="badge bg-soft-danger text-danger">Negado</span> definidos pela seguradora.</p>
+                    <p class="mb-2"><span class="badge bg-soft-primary text-primary">Pago</span> quando o cliente recebe.</p>
+                    <p class="mb-0"><span class="badge bg-gray-200 text-dark">Encerrado</span> arquiva o sinistro.</p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Dicas</h5>
+                </div>
+                <div class="card-body fs-12 text-muted">
+                    <p class="mb-2"><strong class="text-dark">Número</strong> único na sua corretora.</p>
+                    <p class="mb-2"><strong class="text-dark">Item coberto</strong> filtrado pela apólice selecionada — escolha a apólice antes.</p>
+                    <p class="mb-0"><strong class="text-dark">Anexos</strong> (BO, fotos, laudos) na tela de detalhe.</p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-body d-flex justify-content-end gap-2">
+                    <a href="{% if form.instance.pk %}{% url 'claims:claim_detail' object.id %}{% else %}{% url 'claims:claim_list' %}{% endif %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Salvar alterações{% else %}Cadastrar sinistro{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var mapEl = document.getElementById('policy-items-map');
+    var policySel = document.getElementById('id_policy');
+    var itemSel = document.getElementById('id_covered_item');
+    if (!mapEl || !policySel || !itemSel) return;
+
+    var MAP = {};
+    try { MAP = JSON.parse(mapEl.textContent || '{}'); } catch (e) { MAP = {}; }
+
+    var allOptions = Array.from(itemSel.options).map(function(o) {
+        return { value: o.value, text: o.textContent, selected: o.selected };
+    });
+    var blankOption = allOptions.find(function(o) { return o.value === ''; });
+
+    function repopulate(preserveSelected) {
+        var policyId = policySel.value;
+        var allowedIds = (MAP[policyId] || []).map(function(it) { return String(it.id); });
+        var currentSelected = preserveSelected ? itemSel.value : '';
+
+        itemSel.innerHTML = '';
+        if (blankOption) {
+            var blank = document.createElement('option');
+            blank.value = '';
+            blank.textContent = '— Selecione —';
+            itemSel.appendChild(blank);
+        }
+        if (!policyId) {
+            // No policy → no options (besides blank).
+            itemSel.disabled = true;
+            return;
+        }
+        var items = MAP[policyId] || [];
+        items.forEach(function(it) {
+            var opt = document.createElement('option');
+            opt.value = String(it.id);
+            opt.textContent = it.label;
+            if (preserveSelected && String(it.id) === currentSelected) opt.selected = true;
+            itemSel.appendChild(opt);
+        });
+        itemSel.disabled = items.length === 0;
+        if (items.length === 0) {
+            var none = document.createElement('option');
+            none.value = '';
+            none.textContent = '— Sem itens nesta apólice —';
+            none.disabled = true;
+            itemSel.appendChild(none);
+        }
+    }
+
+    policySel.addEventListener('change', function() {
+        repopulate(false);
+    });
+
+    // Initial state: respect server-rendered selection if any.
+    repopulate(true);
+})();
+</script>
+{% endblock %}

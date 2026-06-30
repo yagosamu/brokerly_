@@ -1,0 +1,162 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Sinistros · Brokerly{% endblock %}
+{% block page_title %}Sinistros{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Operação</li>
+<li class="breadcrumb-item">Sinistros</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'claims:claim_create' %}" class="btn btn-sm btn-primary">
+    <i class="feather-plus me-1"></i>Novo sinistro
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full">
+    <div class="card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="card-title mb-0">Sinistros em andamento</h5>
+                <p class="fs-12 text-muted mb-0 mt-1">{{ total }} sinistro{{ total|pluralize:'s' }} no histórico.</p>
+            </div>
+        </div>
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Buscar</label>
+                <div class="position-relative">
+                    <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Número, apólice ou item">
+                    <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Apólice</label>
+                <select name="policy" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for pol in search_form.policy.field.queryset %}
+                    <option value="{{ pol.id }}" {% if selected_policy == pol.id|stringformat:"s" %}selected{% endif %}>#{{ pol.policy_number }} · {{ pol.client.name|truncatechars:20 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">De</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Até</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-light-brand w-100">
+                    <i class="feather-filter me-1"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if claims %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Número</th>
+                        <th class="fs-11 text-uppercase text-muted">Apólice · Cliente</th>
+                        <th class="fs-11 text-uppercase text-muted">Item</th>
+                        <th class="fs-11 text-uppercase text-muted">Ocorrência</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Valor reclamado</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for claim in claims %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'claims:claim_detail' claim.id %}" class="fw-bold text-dark text-decoration-none">
+                                #{{ claim.claim_number }}
+                            </a>
+                            <div class="fs-11 text-muted">avisado {{ claim.notice_date|date:'d/m/Y' }}</div>
+                        </td>
+                        <td>
+                            <a href="{% url 'insurance:policy_detail' claim.policy.id %}" class="text-decoration-none text-dark">#{{ claim.policy.policy_number }}</a>
+                            <div class="fs-11 text-muted">{{ claim.policy.client.name|truncatechars:28 }}</div>
+                        </td>
+                        <td class="fs-12">
+                            <div class="text-dark">{{ claim.covered_item.description|truncatechars:28 }}</div>
+                            {% if claim.covered_item.identifier %}<div class="text-muted">{{ claim.covered_item.identifier }}</div>{% endif %}
+                        </td>
+                        <td class="fs-12">{{ claim.occurrence_date|date:'d/m/Y' }}</td>
+                        <td class="text-end fw-bold">R$ {{ claim.claimed_amount|floatformat:2 }}</td>
+                        <td>
+                            {% if claim.status == 'opened' %}
+                            <span class="badge bg-soft-info text-info">{{ claim.get_status_display }}</span>
+                            {% elif claim.status == 'under_analysis' %}
+                            <span class="badge bg-soft-warning text-warning">{{ claim.get_status_display }}</span>
+                            {% elif claim.status == 'approved' %}
+                            <span class="badge bg-soft-success text-success">{{ claim.get_status_display }}</span>
+                            {% elif claim.status == 'denied' %}
+                            <span class="badge bg-soft-danger text-danger">{{ claim.get_status_display }}</span>
+                            {% elif claim.status == 'paid' %}
+                            <span class="badge bg-soft-primary text-primary">{{ claim.get_status_display }}</span>
+                            {% elif claim.status == 'closed' %}
+                            <span class="badge bg-gray-200 text-dark">{{ claim.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'claims:claim_detail' claim.id %}" class="btn btn-sm btn-light-brand" title="Ver"><i class="feather-eye"></i></a>
+                            <a href="{% url 'claims:claim_update' claim.id %}" class="btn btn-sm btn-light-brand" title="Editar"><i class="feather-edit"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-alert-circle fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhum sinistro encontrado</h6>
+            <p class="fs-12 text-muted mb-3">
+                {% if q or selected_status or selected_policy or date_from or date_to %}
+                Ajuste os filtros para ver outros resultados.
+                {% else %}
+                Que bom — sua carteira não tem sinistros abertos. Se precisar registrar um, comece pelo botão abaixo.
+                {% endif %}
+            </p>
+            <a href="{% url 'claims:claim_create' %}" class="btn btn-sm btn-primary">
+                <i class="feather-plus me-1"></i>Novo sinistro
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
