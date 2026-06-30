@@ -1,0 +1,175 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Apólices · Brokerly{% endblock %}
+{% block page_title %}Apólices{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Carteira</li>
+<li class="breadcrumb-item">Apólices</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'insurance:policy_create' %}" class="btn btn-sm btn-primary">
+    <i class="feather-plus me-1"></i>Nova apólice
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full">
+    <div class="card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="card-title mb-0">Carteira de apólices</h5>
+                <p class="fs-12 text-muted mb-0 mt-1">{{ total }} apólice{{ total|pluralize:'s' }} em carteira.</p>
+            </div>
+        </div>
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Buscar</label>
+                <div class="position-relative">
+                    <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Número, cliente ou documento">
+                    <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Seguradora</label>
+                <select name="insurer" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for ins in search_form.insurer.field.queryset %}
+                    <option value="{{ ins.id }}" {% if selected_insurer == ins.id|stringformat:"s" %}selected{% endif %}>{{ ins.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Ramo</label>
+                <select name="line_of_business" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for lob in search_form.line_of_business.field.queryset %}
+                    <option value="{{ lob.id }}" {% if selected_lob == lob.id|stringformat:"s" %}selected{% endif %}>{{ lob.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">De</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Até</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-sm btn-light-brand w-100">
+                    <i class="feather-filter"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if policies %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Número</th>
+                        <th class="fs-11 text-uppercase text-muted">Cliente</th>
+                        <th class="fs-11 text-uppercase text-muted">Seguradora · Ramo</th>
+                        <th class="fs-11 text-uppercase text-muted">Vigência</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Prêmio</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for policy in policies %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'insurance:policy_detail' policy.id %}" class="fw-bold text-dark text-decoration-none">
+                                #{{ policy.policy_number }}
+                            </a>
+                            {% if policy.proposal %}
+                            <div class="fs-11 text-muted">Origem: <a href="{% url 'insurance:proposal_detail' policy.proposal.id %}" class="text-decoration-none">#{{ policy.proposal.number }}</a></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-dark">{{ policy.client.name|truncatechars:32 }}</div>
+                            <div class="fs-11 text-muted">{{ policy.client.document }}</div>
+                        </td>
+                        <td class="fs-12">
+                            <div>{{ policy.insurer.name }}</div>
+                            <div class="text-muted">{{ policy.line_of_business.name }}</div>
+                        </td>
+                        <td class="fs-12">
+                            {% if policy.start_date %}
+                            {{ policy.start_date|date:'d/m/Y' }}{% if policy.end_date %} → {{ policy.end_date|date:'d/m/Y' }}{% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">R$ {{ policy.total_premium|floatformat:2 }}</td>
+                        <td>
+                            {% if policy.status == 'active' %}
+                            <span class="badge bg-soft-success text-success">{{ policy.get_status_display }}</span>
+                            {% elif policy.status == 'canceled' %}
+                            <span class="badge bg-soft-danger text-danger">{{ policy.get_status_display }}</span>
+                            {% elif policy.status == 'expired' %}
+                            <span class="badge bg-gray-200 text-dark">{{ policy.get_status_display }}</span>
+                            {% elif policy.status == 'renewed' %}
+                            <span class="badge bg-soft-primary text-primary">{{ policy.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'insurance:policy_detail' policy.id %}" class="btn btn-sm btn-light-brand" title="Ver"><i class="feather-eye"></i></a>
+                            <a href="{% url 'insurance:policy_update' policy.id %}" class="btn btn-sm btn-light-brand" title="Editar"><i class="feather-edit"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-shield fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhuma apólice encontrada</h6>
+            <p class="fs-12 text-muted mb-3">
+                {% if q or selected_status or selected_insurer or selected_lob or date_from or date_to %}
+                Ajuste os filtros para ver outros resultados.
+                {% else %}
+                Cadastre a primeira apólice ou gere uma a partir de uma proposta aprovada.
+                {% endif %}
+            </p>
+            <a href="{% url 'insurance:policy_create' %}" class="btn btn-sm btn-primary">
+                <i class="feather-plus me-1"></i>Nova apólice
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

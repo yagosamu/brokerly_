@@ -1,0 +1,155 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Editar apólice{% else %}Nova apólice{% endif %} · Brokerly{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Editar apólice {% if object %}#{{ object.policy_number }}{% endif %}{% else %}Nova apólice{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'insurance:policy_list' %}">Apólices</a></li>
+<li class="breadcrumb-item">{% if form.instance.pk %}Editar{% else %}Cadastrar{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% if form.instance.pk %}{% url 'insurance:policy_detail' object.id %}{% else %}{% url 'insurance:policy_list' %}{% endif %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ form.non_field_errors|first }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Identificação</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.policy_number.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Número da apólice <span class="text-danger">*</span></label>
+                            {{ form.policy_number|add_class:"form-control"|attr:"placeholder:AP-2026-001" }}
+                            {% if form.policy_number.errors %}<div class="invalid-feedback d-block">{{ form.policy_number.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <label for="{{ form.client.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Cliente <span class="text-danger">*</span></label>
+                            {{ form.client|add_class:"form-select" }}
+                            {% if form.client.errors %}<div class="invalid-feedback d-block">{{ form.client.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.insurer.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Seguradora <span class="text-danger">*</span></label>
+                            {{ form.insurer|add_class:"form-select" }}
+                            {% if form.insurer.errors %}<div class="invalid-feedback d-block">{{ form.insurer.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.line_of_business.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Ramo <span class="text-danger">*</span></label>
+                            {{ form.line_of_business|add_class:"form-select" }}
+                            {% if form.line_of_business.errors %}<div class="invalid-feedback d-block">{{ form.line_of_business.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Valores</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="{{ form.net_premium.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Prêmio líquido (R$)</label>
+                            {{ form.net_premium|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.net_premium.errors %}<div class="invalid-feedback d-block">{{ form.net_premium.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.iof.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">IOF (R$)</label>
+                            {{ form.iof|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.iof.errors %}<div class="invalid-feedback d-block">{{ form.iof.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.total_premium.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Prêmio total (R$)</label>
+                            {{ form.total_premium|add_class:"form-control"|attr:"step:0.01" }}
+                            {% if form.total_premium.errors %}<div class="invalid-feedback d-block">{{ form.total_premium.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.commission_rate.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Comissão (%)</label>
+                            <div class="input-group">
+                                {{ form.commission_rate|add_class:"form-control"|attr:"step:0.0001" }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                            {% if form.commission_rate.errors %}<div class="invalid-feedback d-block">{{ form.commission_rate.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Vigência e pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Início</label>
+                            {{ form.start_date|add_class:"form-control" }}
+                            {% if form.start_date.errors %}<div class="invalid-feedback d-block">{{ form.start_date.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Fim</label>
+                            {{ form.end_date|add_class:"form-control" }}
+                            {% if form.end_date.errors %}<div class="invalid-feedback d-block">{{ form.end_date.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.payment_info.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Forma de pagamento</label>
+                            {{ form.payment_info|add_class:"form-control"|attr:"placeholder:Ex.: 12x no cartão" }}
+                            {% if form.payment_info.errors %}<div class="invalid-feedback d-block">{{ form.payment_info.errors|first }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Status</h5>
+                </div>
+                <div class="card-body">
+                    {{ form.status|add_class:"form-select" }}
+                    <p class="fs-12 text-muted mb-0 mt-2">
+                        <strong>Ativa</strong> é o estado padrão. Use <strong>Cancelada</strong>
+                        para encerrar antes do vencimento; <strong>Renovada</strong> é setada
+                        automaticamente no fluxo de renovação.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Dicas</h5>
+                </div>
+                <div class="card-body fs-12 text-muted">
+                    <p class="mb-2"><strong class="text-dark">Número</strong> é único na sua corretora.</p>
+                    <p class="mb-2"><strong class="text-dark">Cliente, seguradora e ramo</strong> só listam ativos.</p>
+                    <p class="mb-0"><strong class="text-dark">Itens cobertos</strong> e <strong class="text-dark">anexos</strong> são gerenciados na tela de detalhe da apólice.</p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-body d-flex justify-content-end gap-2">
+                    <a href="{% if form.instance.pk %}{% url 'insurance:policy_detail' object.id %}{% else %}{% url 'insurance:policy_list' %}{% endif %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Salvar alterações{% else %}Cadastrar apólice{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

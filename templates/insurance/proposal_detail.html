@@ -18,11 +18,11 @@
     <a href="{% url 'insurance:proposal_update' proposal.id %}" class="btn btn-sm btn-primary">
         <i class="feather-edit me-1"></i>Editar
     </a>
-    {% if proposal.status == 'approved' %}
-    <button type="button" class="btn btn-sm btn-success" disabled>
-        <i class="feather-check-square me-1"></i>Gerar apólice <span class="badge bg-white text-success ms-1">em breve</span>
-    </button>
     {% endif %}
+    {% if can_generate_policy %}
+    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#generatePolicyModal">
+        <i class="feather-check-square me-1"></i>Gerar apólice
+    </button>
     {% endif %}
 </div>
 {% endblock %}
@@ -318,11 +318,60 @@
                     <i class="feather-file-plus me-1"></i>Anexos
                     <span class="badge bg-gray-200 text-dark ms-1">{{ proposal_documents|length }}</span>
                 </a>
-                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
-                    <i class="feather-shield me-1"></i>Gerar apólice <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+                {% if can_generate_policy %}
+                <button type="button" class="btn btn-success w-100 text-start" data-bs-toggle="modal" data-bs-target="#generatePolicyModal">
+                    <i class="feather-shield me-1"></i>Gerar apólice
                 </button>
+                {% elif proposal.status == 'converted' %}
+                {% with policy=proposal.generated_policies.first %}
+                {% if policy %}
+                <a href="{% url 'insurance:policy_detail' policy.id %}" class="btn btn-soft-success w-100 text-start bg-soft-success text-success">
+                    <i class="feather-shield me-1"></i>Ver apólice #{{ policy.policy_number }}
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
+                    <i class="feather-shield me-1"></i>Já convertida
+                </button>
+                {% endif %}
+                {% endwith %}
+                {% else %}
+                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
+                    <i class="feather-shield me-1"></i>Gerar apólice
+                </button>
+                {% endif %}
             </div>
         </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_generate_policy %}
+<div class="modal fade" id="generatePolicyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="{% url 'insurance:proposal_generate_policy' proposal.id %}">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="feather-shield me-2"></i>Gerar apólice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fs-12 text-muted">
+                        Vamos criar uma nova apólice copiando os dados desta proposta e clonando os itens cobertos.
+                        A proposta será marcada como <strong>Convertida em apólice</strong> e não poderá mais ser editada.
+                    </p>
+                    <label for="policyNumberInput" class="form-label fs-12 text-uppercase text-muted">Número da apólice <span class="text-danger">*</span></label>
+                    <input type="text" id="policyNumberInput" name="policy_number" class="form-control" required maxlength="40" placeholder="Ex.: AP-2026-001" autocomplete="off">
+                    <small class="text-muted fs-11 d-block mt-1">Deve ser único na sua corretora.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light-brand" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="feather-check-square me-1"></i>Gerar apólice
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 {% endif %}
