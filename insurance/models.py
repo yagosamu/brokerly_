@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from base.models import TenantAwareModel
@@ -191,6 +192,150 @@ class CoveredItem(TenantAwareModel):
         EQUIPMENT = 'equipment', _('Equipamento')
         OTHER = 'other', _('Outro')
 
+    ATTRIBUTE_SCHEMAS = {
+        'auto': [
+            {'key': 'marca', 'label': 'Marca', 'type': 'text'},
+            {'key': 'modelo', 'label': 'Modelo', 'type': 'text'},
+            {'key': 'ano', 'label': 'Ano', 'type': 'number'},
+            {'key': 'placa', 'label': 'Placa', 'type': 'text'},
+            {'key': 'chassi', 'label': 'Chassi', 'type': 'text'},
+            {
+                'key': 'combustivel',
+                'label': 'Combustível',
+                'type': 'select',
+                'choices': [
+                    'Gasolina',
+                    'Etanol',
+                    'Flex',
+                    'Diesel',
+                    'Elétrico',
+                    'Híbrido',
+                ],
+            },
+        ],
+        'property': [
+            {
+                'key': 'tipo_imovel',
+                'label': 'Tipo',
+                'type': 'select',
+                'choices': [
+                    'Casa',
+                    'Apartamento',
+                    'Comercial',
+                    'Condomínio',
+                ],
+            },
+            {
+                'key': 'endereco_completo',
+                'label': 'Endereço completo',
+                'type': 'text',
+            },
+            {'key': 'area_m2', 'label': 'Área (m²)', 'type': 'number'},
+            {
+                'key': 'ano_construcao',
+                'label': 'Ano de construção',
+                'type': 'number',
+            },
+        ],
+        'fleet': [
+            {
+                'key': 'quantidade_veiculos',
+                'label': 'Qtd veículos',
+                'type': 'number',
+            },
+            {
+                'key': 'descricao_frota',
+                'label': 'Descrição da frota',
+                'type': 'text',
+            },
+        ],
+        'travel': [
+            {'key': 'destino', 'label': 'Destino', 'type': 'text'},
+            {'key': 'data_ida', 'label': 'Data de ida', 'type': 'date'},
+            {'key': 'data_volta', 'label': 'Data de volta', 'type': 'date'},
+            {
+                'key': 'qtd_viajantes',
+                'label': 'Quantidade de viajantes',
+                'type': 'number',
+            },
+        ],
+        'life': [
+            {
+                'key': 'nome_segurado',
+                'label': 'Nome do segurado',
+                'type': 'text',
+            },
+            {'key': 'cpf', 'label': 'CPF', 'type': 'text'},
+            {
+                'key': 'data_nascimento',
+                'label': 'Data de nascimento',
+                'type': 'date',
+            },
+            {'key': 'profissao', 'label': 'Profissão', 'type': 'text'},
+        ],
+        'equipment': [
+            {'key': 'fabricante', 'label': 'Fabricante', 'type': 'text'},
+            {'key': 'modelo', 'label': 'Modelo', 'type': 'text'},
+            {
+                'key': 'numero_serie',
+                'label': 'Número de série',
+                'type': 'text',
+            },
+            {
+                'key': 'ano_fabricacao',
+                'label': 'Ano de fabricação',
+                'type': 'number',
+            },
+        ],
+        'other': [],
+    }
+
+    COVERAGE_PRESETS = {
+        'auto': [
+            'Casco',
+            'Roubo e furto',
+            'Colisão',
+            'Incêndio',
+            'Danos a terceiros (RCF)',
+            'APP (Acidentes Pessoais)',
+            'Vidros',
+        ],
+        'property': [
+            'Incêndio',
+            'Roubo',
+            'Vendaval',
+            'Alagamento',
+            'Danos elétricos',
+            'Responsabilidade Civil',
+        ],
+        'fleet': [
+            'Casco da frota',
+            'Roubo / Furto',
+            'RCF Frota',
+            'APP coletivo',
+        ],
+        'travel': [
+            'Despesas médicas',
+            'Bagagem extraviada',
+            'Cancelamento de viagem',
+            'Repatriação',
+        ],
+        'life': [
+            'Morte natural',
+            'Morte acidental',
+            'Invalidez permanente',
+            'Doenças graves',
+            'Diária por internação',
+        ],
+        'equipment': [
+            'Roubo',
+            'Danos acidentais',
+            'Quebra eletrônica',
+            'Incêndio',
+        ],
+        'other': [],
+    }
+
     proposal = models.ForeignKey(
         Proposal,
         on_delete=models.CASCADE,
@@ -227,6 +372,21 @@ class CoveredItem(TenantAwareModel):
 
     class Meta:
         ordering = ('id',)
+        constraints = [
+            models.CheckConstraint(
+                name='covered_item_exactly_one_parent',
+                condition=(
+                    Q(proposal__isnull=False, policy__isnull=True)
+                    | Q(proposal__isnull=True, policy__isnull=False)
+                ),
+            ),
+        ]
 
     def __str__(self):
         return self.description
+
+    def get_attribute_schema(self):
+        return self.ATTRIBUTE_SCHEMAS.get(self.item_type, [])
+
+    def get_coverage_presets(self):
+        return self.COVERAGE_PRESETS.get(self.item_type, [])

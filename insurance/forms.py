@@ -1,3 +1,6 @@
+import json
+from datetime import date, datetime
+
 from django import forms
 from django.forms import inlineformset_factory
 
@@ -112,6 +115,119 @@ class CoveredItemForm(forms.ModelForm):
                 }
             ),
         }
+
+    def clean_attributes(self):
+        attributes = self.cleaned_data.get('attributes')
+        if not isinstance(attributes, dict):
+            raise forms.ValidationError(
+                'Os atributos devem ser um objeto JSON válido.'
+            )
+        return attributes
+
+    def clean_coverages(self):
+        coverages = self.cleaned_data.get('coverages')
+        if not isinstance(coverages, list):
+            raise forms.ValidationError(
+                'As coberturas devem ser uma lista JSON válida.'
+            )
+        return coverages
+
+    def clean(self):
+        cleaned_data = super().clean()
+        item_type = cleaned_data.get('item_type')
+        insured_amount = cleaned_data.get('insured_amount')
+        attributes = cleaned_data.get('attributes')
+        coverages = cleaned_data.get('coverages')
+
+        if (
+            item_type
+            and item_type != CoveredItem.ItemType.OTHER
+            and insured_amount is not None
+            and insured_amount <= 0
+        ):
+            self.add_error(
+                'insured_amount',
+                'Importância segurada deve ser maior que zero.',
+            )
+
+        if isinstance(attributes, dict) and item_type:
+            schema = {
+                field['key']: field
+                for field in CoveredItem.ATTRIBUTE_SCHEMAS.get(item_type, [])
+            }
+            normalized_attributes = {}
+            for key, value in attributes.items():
+                field = schema.get(key)
+                if field is None or value in ('', None):
+                    continue
+                try:
+                    normalized_attributes[key] = self._normalize_attribute(
+                        value,
+                        field['type'],
+                    )
+                except (TypeError, ValueError):
+                    field_label = field['label']
+                    self.add_error(
+                        'attributes',
+                        f'O atributo {field_label} possui valor inválido.',
+                    )
+            cleaned_data['attributes'] = normalized_attributes
+
+        if isinstance(coverages, list):
+            if item_type != CoveredItem.ItemType.OTHER and not coverages:
+                self.add_error(
+                    'coverages',
+                    'Informe pelo menos uma cobertura.',
+                )
+            normalized_coverages = []
+            for coverage in coverages:
+                if not isinstance(coverage, dict):
+                    self.add_error(
+                        'coverages',
+                        'Cada cobertura deve ser um objeto JSON válido.',
+                    )
+                    continue
+                name = coverage.get('nome')
+                if not isinstance(name, str) or not name.strip():
+                    self.add_error(
+                        'coverages',
+                        'Cada cobertura deve possuir um nome.',
+                    )
+                    continue
+                normalized_coverage = dict(coverage)
+                normalized_coverage['nome'] = name.strip()
+                normalized_coverages.append(normalized_coverage)
+            cleaned_data['coverages'] = normalized_coverages
+
+        return cleaned_data
+
+    @staticmethod
+    def _normalize_attribute(value, field_type):
+        if field_type == 'number':
+            if isinstance(value, bool):
+                raise ValueError
+            return float(value)
+        if field_type == 'date':
+            if isinstance(value, datetime):
+                value = value.date()
+            if isinstance(value, date):
+                return value.isoformat()
+            return date.fromisoformat(str(value)).isoformat()
+        return str(value)
+
+    @property
+    def attribute_schemas_json(self):
+        return json.dumps(
+            CoveredItem.ATTRIBUTE_SCHEMAS,
+            ensure_ascii=False,
+        )
+
+    @property
+    def coverage_presets_json(self):
+        return json.dumps(
+            CoveredItem.COVERAGE_PRESETS,
+            ensure_ascii=False,
+        )
 
 
 CoveredItemFormSet = inlineformset_factory(
