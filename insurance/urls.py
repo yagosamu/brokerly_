@@ -6,6 +6,22 @@ from insurance import views
 app_name = 'insurance'
 
 urlpatterns = [
+    path('apolices/', views.PolicyListView.as_view(), name='policy_list'),
+    path(
+        'apolices/nova/',
+        views.PolicyCreateView.as_view(),
+        name='policy_create',
+    ),
+    path(
+        'apolices/<int:pk>/',
+        views.PolicyDetailView.as_view(),
+        name='policy_detail',
+    ),
+    path(
+        'apolices/<int:pk>/editar/',
+        views.PolicyUpdateView.as_view(),
+        name='policy_update',
+    ),
     path('propostas/', views.ProposalListView.as_view(), name='proposal_list'),
     path(
         'propostas/nova/',
@@ -21,5 +37,10 @@ urlpatterns = [
         'propostas/<int:pk>/editar/',
         views.ProposalUpdateView.as_view(),
         name='proposal_update',
+    ),
+    path(
+        'propostas/<int:pk>/gerar-apolice/',
+        views.GeneratePolicyFromProposalView.as_view(),
+        name='proposal_generate_policy',
     ),
 ]

@@ -26,12 +26,12 @@ class PolicyAdmin(admin.ModelAdmin):
         'policy_number',
         'client',
         'insurer',
-        'line_of_business',
         'status',
-        'brokerage',
-        'created_at',
+        'start_date',
+        'end_date',
+        'total_premium',
     )
-    list_filter = ('status', 'insurer', 'line_of_business', 'brokerage')
+    list_filter = ('status', 'brokerage', 'insurer')
     search_fields = ('policy_number', 'client__name', 'client__document')
     ordering = ('-created_at',)
 

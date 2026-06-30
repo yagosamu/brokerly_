@@ -93,15 +93,26 @@ class Proposal(TenantAwareModel):
 
 
 class Policy(TenantAwareModel):
-    """Provide the minimum policy shape required by covered items."""
-
     class Status(models.TextChoices):
         ACTIVE = 'active', _('Ativa')
         CANCELED = 'canceled', _('Cancelada')
         EXPIRED = 'expired', _('Expirada')
         RENEWED = 'renewed', _('Renovada')
 
+    class AISummaryStatus(models.TextChoices):
+        IDLE = 'idle', _('Pendente')
+        PROCESSING = 'processing', _('Processando')
+        DONE = 'done', _('Concluído')
+        ERROR = 'error', _('Erro')
+
     policy_number = models.CharField(max_length=40)
+    proposal = models.ForeignKey(
+        Proposal,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_policies',
+    )
     client = models.ForeignKey(
         'clients.Client',
         on_delete=models.PROTECT,
@@ -123,6 +134,36 @@ class Policy(TenantAwareModel):
         default=Status.ACTIVE,
     )
 
+    net_premium = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    total_premium = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    iof = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    commission_rate = models.DecimalField(
+        max_digits=6,
+        decimal_places=4,
+        default=0,
+        help_text='Percentual da comissão paga pela seguradora à corretora.',
+    )
+
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    payment_info = models.CharField(max_length=255, blank=True)
+
+    ai_summary = models.TextField(blank=True)
+    ai_summary_status = models.CharField(
+        max_length=12,
+        choices=AISummaryStatus.choices,
+        default=AISummaryStatus.IDLE,
+    )
+    ai_summary_updated_at = models.DateTimeField(null=True, blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='policies_created',
+    )
+
     class Meta:
         ordering = ('-created_at',)
         constraints = [
@@ -130,6 +171,10 @@ class Policy(TenantAwareModel):
                 fields=['brokerage', 'policy_number'],
                 name='policy_unique_number_per_brokerage',
             ),
+        ]
+        indexes = [
+            models.Index(fields=['brokerage', 'status']),
+            models.Index(fields=['brokerage', '-created_at']),
         ]
 
     def __str__(self):
