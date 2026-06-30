@@ -139,6 +139,8 @@
                 </div>
                 <div class="card-body">
                     {{ formset.management_form }}
+                    <script id="item-schemas" type="application/json">{{ formset.empty_form.attribute_schemas_json|safe }}</script>
+                    <script id="item-presets" type="application/json">{{ formset.empty_form.coverage_presets_json|safe }}</script>
                     <div id="items-container">
                         {% for item_form in formset %}
                         <div class="item-row" data-form-index="{{ forloop.counter0 }}">
@@ -155,7 +157,7 @@
                             <div class="row g-2">
                                 <div class="col-md-3">
                                     <label class="form-label fs-11 text-uppercase text-muted">Tipo</label>
-                                    {{ item_form.item_type|add_class:"form-select form-select-sm" }}
+                                    {{ item_form.item_type|add_class:"form-select form-select-sm js-item-type" }}
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fs-11 text-uppercase text-muted">Descrição</label>
@@ -169,14 +171,26 @@
                                     <label class="form-label fs-11 text-uppercase text-muted">Importância (R$)</label>
                                     {{ item_form.insured_amount|add_class:"form-control form-control-sm"|attr:"step:0.01" }}
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fs-11 text-uppercase text-muted">Atributos (JSON)</label>
-                                    {{ item_form.attributes|add_class:"form-control form-control-sm" }}
+                            </div>
+                            <div class="mt-3">
+                                <label class="form-label fs-11 text-uppercase text-muted">Atributos específicos</label>
+                                <div class="row g-2 js-attr-fields"></div>
+                            </div>
+                            <div class="mt-3">
+                                <label class="form-label fs-11 text-uppercase text-muted">Coberturas</label>
+                                <div class="js-coverages-chips d-flex flex-wrap gap-2 mb-2"></div>
+                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                                    <div class="js-coverages-presets d-flex gap-1 flex-wrap"></div>
+                                    <div class="input-group input-group-sm" style="max-width: 280px;">
+                                        <input type="text" class="form-control form-control-sm js-coverage-custom" placeholder="Cobertura personalizada">
+                                        <input type="number" class="form-control form-control-sm js-coverage-limit" placeholder="Limite R$" step="0.01" style="max-width:110px;">
+                                        <button type="button" class="btn btn-sm btn-light-brand js-coverage-add"><i class="feather-plus"></i></button>
+                                    </div>
                                 </div>
-                                <div class="col-md-5">
-                                    <label class="form-label fs-11 text-uppercase text-muted">Coberturas (JSON)</label>
-                                    {{ item_form.coverages|add_class:"form-control form-control-sm" }}
-                                </div>
+                            </div>
+                            <div class="d-none">
+                                {{ item_form.attributes|add_class:"js-attributes-json" }}
+                                {{ item_form.coverages|add_class:"js-coverages-json" }}
                             </div>
                             {% if item_form.errors %}
                             <div class="mt-2">
@@ -247,8 +261,200 @@
     var totalForms = document.getElementById('id_covered_items-TOTAL_FORMS');
     if (!container || !addBtn || !totalForms) return;
 
+    var SCHEMAS = JSON.parse(document.getElementById('item-schemas').textContent || '{}');
+    var PRESETS = JSON.parse(document.getElementById('item-presets').textContent || '{}');
+
     var template = container.querySelector('.item-row');
     if (!template) return;
+
+    function parseJsonField(el) {
+        try { return JSON.parse(el.value || (el.tagName === 'TEXTAREA' ? '' : '')); }
+        catch (e) { return null; }
+    }
+
+    function setJsonField(el, value) {
+        el.value = JSON.stringify(value);
+    }
+
+    function renderAttrFields(row) {
+        var typeSelect = row.querySelector('.js-item-type');
+        var fieldsHost = row.querySelector('.js-attr-fields');
+        var attrsHidden = row.querySelector('.js-attributes-json');
+        if (!typeSelect || !fieldsHost || !attrsHidden) return;
+
+        var itemType = typeSelect.value || 'other';
+        var schema = SCHEMAS[itemType] || [];
+        var current = parseJsonField(attrsHidden) || {};
+        if (typeof current !== 'object' || Array.isArray(current)) current = {};
+
+        fieldsHost.innerHTML = '';
+        if (schema.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'col-12';
+            empty.innerHTML = '<small class="text-muted fs-11">Este tipo não tem atributos específicos.</small>';
+            fieldsHost.appendChild(empty);
+            return;
+        }
+        schema.forEach(function(field) {
+            var col = document.createElement('div');
+            col.className = 'col-md-4';
+            var lbl = document.createElement('label');
+            lbl.className = 'form-label fs-11 text-uppercase text-muted mb-1';
+            lbl.textContent = field.label;
+            col.appendChild(lbl);
+
+            var input;
+            if (field.type === 'select') {
+                input = document.createElement('select');
+                input.className = 'form-select form-select-sm js-attr-input';
+                var blank = document.createElement('option'); blank.value = ''; blank.textContent = '—';
+                input.appendChild(blank);
+                (field.choices || []).forEach(function(opt) {
+                    var o = document.createElement('option'); o.value = opt; o.textContent = opt;
+                    input.appendChild(o);
+                });
+            } else {
+                input = document.createElement('input');
+                input.className = 'form-control form-control-sm js-attr-input';
+                input.type = (field.type === 'number') ? 'number' : (field.type === 'date' ? 'date' : 'text');
+                if (field.type === 'number') input.step = '0.01';
+            }
+            input.setAttribute('data-key', field.key);
+            if (current[field.key] !== undefined && current[field.key] !== null) {
+                input.value = current[field.key];
+            }
+            col.appendChild(input);
+            fieldsHost.appendChild(col);
+        });
+    }
+
+    function renderCoverages(row) {
+        var typeSelect = row.querySelector('.js-item-type');
+        var chipsHost = row.querySelector('.js-coverages-chips');
+        var presetsHost = row.querySelector('.js-coverages-presets');
+        var covHidden = row.querySelector('.js-coverages-json');
+        if (!typeSelect || !chipsHost || !presetsHost || !covHidden) return;
+
+        var itemType = typeSelect.value || 'other';
+        var current = parseJsonField(covHidden) || [];
+        if (!Array.isArray(current)) current = [];
+
+        chipsHost.innerHTML = '';
+        if (current.length === 0) {
+            var empty = document.createElement('small');
+            empty.className = 'text-muted fs-11';
+            empty.textContent = 'Nenhuma cobertura adicionada ainda.';
+            chipsHost.appendChild(empty);
+        } else {
+            current.forEach(function(cov, idx) {
+                var chip = document.createElement('span');
+                chip.className = 'badge bg-soft-primary text-primary d-inline-flex align-items-center gap-1';
+                var label = cov.nome || cov;
+                if (cov.limite) label += ' · R$ ' + Number(cov.limite).toLocaleString('pt-BR');
+                chip.innerHTML = '<span>' + label + '</span>';
+                var rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'btn btn-sm btn-link p-0 text-primary fs-12';
+                rm.innerHTML = '<i class="feather-x"></i>';
+                rm.setAttribute('data-cov-index', idx);
+                chip.appendChild(rm);
+                chipsHost.appendChild(chip);
+            });
+        }
+
+        presetsHost.innerHTML = '';
+        var presets = PRESETS[itemType] || [];
+        var usedNames = current.map(function(c) { return (c.nome || '').toLowerCase(); });
+        presets.forEach(function(name) {
+            if (usedNames.indexOf(name.toLowerCase()) !== -1) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-light-brand fs-11';
+            btn.setAttribute('data-preset', name);
+            btn.innerHTML = '<i class="feather-plus me-1"></i>' + name;
+            presetsHost.appendChild(btn);
+        });
+    }
+
+    function syncAttributes(row) {
+        var attrsHidden = row.querySelector('.js-attributes-json');
+        if (!attrsHidden) return;
+        var out = {};
+        row.querySelectorAll('.js-attr-input').forEach(function(el) {
+            var key = el.getAttribute('data-key');
+            var val = el.value;
+            if (val !== '' && val !== null && val !== undefined) out[key] = val;
+        });
+        setJsonField(attrsHidden, out);
+    }
+
+    function syncCoverages(row, newList) {
+        var covHidden = row.querySelector('.js-coverages-json');
+        if (!covHidden) return;
+        setJsonField(covHidden, newList);
+    }
+
+    function getCoverages(row) {
+        var covHidden = row.querySelector('.js-coverages-json');
+        if (!covHidden) return [];
+        var parsed = parseJsonField(covHidden);
+        return Array.isArray(parsed) ? parsed : [];
+    }
+
+    function initRow(row) {
+        var typeSelect = row.querySelector('.js-item-type');
+        if (!typeSelect) return;
+        renderAttrFields(row);
+        renderCoverages(row);
+
+        typeSelect.addEventListener('change', function() {
+            syncAttributes(row);
+            renderAttrFields(row);
+            renderCoverages(row);
+        });
+
+        row.addEventListener('input', function(e) {
+            if (e.target.classList.contains('js-attr-input')) {
+                syncAttributes(row);
+            }
+        });
+
+        row.addEventListener('click', function(e) {
+            var presetBtn = e.target.closest('[data-preset]');
+            if (presetBtn) {
+                var list = getCoverages(row);
+                list.push({ nome: presetBtn.getAttribute('data-preset') });
+                syncCoverages(row, list);
+                renderCoverages(row);
+                return;
+            }
+            var rmBtn = e.target.closest('[data-cov-index]');
+            if (rmBtn) {
+                var idx = parseInt(rmBtn.getAttribute('data-cov-index'), 10);
+                var list2 = getCoverages(row);
+                list2.splice(idx, 1);
+                syncCoverages(row, list2);
+                renderCoverages(row);
+                return;
+            }
+            var addBtn = e.target.closest('.js-coverage-add');
+            if (addBtn) {
+                var nameInput = row.querySelector('.js-coverage-custom');
+                var limitInput = row.querySelector('.js-coverage-limit');
+                var nm = (nameInput.value || '').trim();
+                if (!nm) return;
+                var cov = { nome: nm };
+                var lim = parseFloat(limitInput.value);
+                if (!isNaN(lim) && lim > 0) cov.limite = lim;
+                var list3 = getCoverages(row);
+                list3.push(cov);
+                syncCoverages(row, list3);
+                nameInput.value = '';
+                limitInput.value = '';
+                renderCoverages(row);
+            }
+        });
+    }
 
     function reindex() {
         var rows = container.querySelectorAll('.item-row');
@@ -274,14 +480,20 @@
                 el.checked = false;
             } else if (el.tagName === 'SELECT') {
                 el.selectedIndex = 0;
+            } else if (el.classList.contains('js-attributes-json')) {
+                el.value = '{}';
+            } else if (el.classList.contains('js-coverages-json')) {
+                el.value = '[]';
             } else if (!el.name || !el.name.endsWith('-id')) {
                 el.value = '';
             } else {
                 el.value = '';
             }
         });
+        newRow.classList.remove('is-deleted');
         container.appendChild(newRow);
         reindex();
+        initRow(newRow);
     });
 
     container.addEventListener('change', function(e) {
@@ -295,6 +507,17 @@
         var row = cb.closest('.item-row');
         if (row) row.classList.add('is-deleted');
     });
+
+    // Pre-submit: ensure all visible attribute inputs are synced.
+    var form = document.getElementById('proposal-form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            container.querySelectorAll('.item-row').forEach(syncAttributes);
+        });
+    }
+
+    // Initialize each existing row.
+    container.querySelectorAll('.item-row').forEach(initRow);
 })();
 </script>
 {% endblock %}
