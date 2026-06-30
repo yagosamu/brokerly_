@@ -6,6 +6,26 @@ from insurance import views
 app_name = 'insurance'
 
 urlpatterns = [
+    path(
+        'endossos/',
+        views.EndorsementListView.as_view(),
+        name='endorsement_list',
+    ),
+    path(
+        'endossos/novo/',
+        views.EndorsementCreateView.as_view(),
+        name='endorsement_create',
+    ),
+    path(
+        'endossos/<int:pk>/',
+        views.EndorsementDetailView.as_view(),
+        name='endorsement_detail',
+    ),
+    path(
+        'endossos/<int:pk>/editar/',
+        views.EndorsementUpdateView.as_view(),
+        name='endorsement_update',
+    ),
     path('apolices/', views.PolicyListView.as_view(), name='policy_list'),
     path(
         'apolices/nova/',

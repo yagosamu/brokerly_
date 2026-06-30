@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from insurance.models import CoveredItem, Policy, Proposal
+from insurance.models import CoveredItem, Endorsement, Policy, Proposal
 
 
 @admin.register(Proposal)
@@ -49,3 +49,24 @@ class CoveredItemAdmin(admin.ModelAdmin):
     )
     list_filter = ('item_type',)
     search_fields = ('description', 'identifier')
+
+
+@admin.register(Endorsement)
+class EndorsementAdmin(admin.ModelAdmin):
+    list_display = (
+        'endorsement_number',
+        'policy',
+        'type',
+        'status',
+        'effective_date',
+        'premium_change',
+        'brokerage',
+        'created_at',
+    )
+    list_filter = ('type', 'status', 'brokerage', 'effective_date')
+    search_fields = (
+        'endorsement_number',
+        'policy__policy_number',
+        'description',
+    )
+    ordering = ('-effective_date',)

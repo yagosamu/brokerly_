@@ -5,7 +5,7 @@ from django import forms
 from django.forms import inlineformset_factory
 
 from clients.models import Client
-from insurance.models import CoveredItem, Policy, Proposal
+from insurance.models import CoveredItem, Endorsement, Policy, Proposal
 from insurers.models import Insurer, LineOfBusiness
 
 
@@ -391,3 +391,127 @@ class PolicySearchForm(forms.Form):
                     is_active=True,
                 ).order_by('name')
             )
+
+
+class EndorsementForm(forms.ModelForm):
+    class Meta:
+        model = Endorsement
+        fields = (
+            'endorsement_number',
+            'policy',
+            'type',
+            'status',
+            'description',
+            'premium_change',
+            'effective_date',
+        )
+        labels = {
+            'endorsement_number': 'Número do endosso',
+            'policy': 'Apólice',
+            'type': 'Tipo',
+            'status': 'Status',
+            'description': 'Descrição',
+            'premium_change': 'Alteração de prêmio (R$)',
+            'effective_date': 'Data de vigência',
+        }
+        widgets = {
+            'effective_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, brokerage=None, **kwargs):
+        self.brokerage = brokerage
+        super().__init__(*args, **kwargs)
+        if brokerage is not None:
+            self.fields['policy'].queryset = Policy.objects.filter(
+                brokerage=brokerage,
+            ).select_related('client', 'insurer').order_by('-created_at')
+
+    def clean_endorsement_number(self):
+        value = self.cleaned_data['endorsement_number'].strip()
+        if self.brokerage is None:
+            return value
+        queryset = Endorsement.objects.filter(
+            brokerage=self.brokerage,
+            endorsement_number=value,
+        )
+        if self.instance.pk:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise forms.ValidationError(
+                'Já existe um endosso com este número na sua corretora.'
+            )
+        return value
+
+    def clean(self):
+        cleaned_data = super().clean()
+        policy = cleaned_data.get('policy')
+        endorsement_type = cleaned_data.get('type')
+        premium_change = cleaned_data.get('premium_change')
+
+        if (
+            policy
+            and self.brokerage
+            and policy.brokerage_id != self.brokerage.id
+        ):
+            self.add_error('policy', 'Apólice inválida.')
+
+        if premium_change is None:
+            return cleaned_data
+        if (
+            endorsement_type == Endorsement.Type.INCREASE
+            and premium_change <= 0
+        ):
+            self.add_error(
+                'premium_change',
+                'A alteração de prêmio deve ser positiva para aumento.',
+            )
+        elif (
+            endorsement_type == Endorsement.Type.DECREASE
+            and premium_change >= 0
+        ):
+            self.add_error(
+                'premium_change',
+                'A alteração de prêmio deve ser negativa para redução.',
+            )
+        elif (
+            endorsement_type == Endorsement.Type.DATA_CHANGE
+            and premium_change != 0
+        ):
+            self.add_error(
+                'premium_change',
+                'A alteração de prêmio deve ser zero para alteração de dados.',
+            )
+        return cleaned_data
+
+
+class EndorsementSearchForm(forms.Form):
+    q = forms.CharField(required=False)
+    status = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Todos os status')] + list(Endorsement.Status.choices),
+    )
+    type = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Todos os tipos')] + list(Endorsement.Type.choices),
+    )
+    policy = forms.ModelChoiceField(
+        required=False,
+        queryset=Policy.objects.none(),
+        empty_label='Todas as apólices',
+    )
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+
+    def __init__(self, *args, brokerage=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if brokerage is not None:
+            self.fields['policy'].queryset = Policy.objects.filter(
+                brokerage=brokerage,
+            ).order_by('-created_at')

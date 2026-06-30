@@ -390,3 +390,72 @@ class CoveredItem(TenantAwareModel):
 
     def get_coverage_presets(self):
         return self.COVERAGE_PRESETS.get(self.item_type, [])
+
+
+class Endorsement(TenantAwareModel):
+    class Type(models.TextChoices):
+        INCREASE = 'increase', _('Aumento de cobertura')
+        DECREASE = 'decrease', _('Redução de cobertura')
+        CANCELLATION = 'cancellation', _('Cancelamento')
+        DATA_CHANGE = 'data_change', _('Alteração de dados')
+
+    class Status(models.TextChoices):
+        DRAFT = 'draft', _('Rascunho')
+        SUBMITTED = 'submitted', _('Enviado à seguradora')
+        APPROVED = 'approved', _('Aprovado')
+        REJECTED = 'rejected', _('Recusado')
+        EFFECTIVE = 'effective', _('Em vigor')
+        CANCELED = 'canceled', _('Cancelado')
+
+    endorsement_number = models.CharField(max_length=40)
+    policy = models.ForeignKey(
+        Policy,
+        on_delete=models.PROTECT,
+        related_name='endorsements',
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=Type.choices,
+        default=Type.DATA_CHANGE,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    description = models.TextField(blank=True)
+    premium_change = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        help_text=(
+            'Positivo para aumento, negativo para redução, zero para alteração '
+            'de dados.'
+        ),
+    )
+    effective_date = models.DateField()
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='endorsements_created',
+    )
+
+    class Meta:
+        ordering = ('-effective_date',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['brokerage', 'endorsement_number'],
+                name='endorsement_unique_number_per_brokerage',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['brokerage', 'status']),
+            models.Index(fields=['brokerage', '-effective_date']),
+            models.Index(fields=['policy', '-effective_date']),
+        ]
+
+    def __str__(self):
+        return f'Endosso {self.endorsement_number}'
