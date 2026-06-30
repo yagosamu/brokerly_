@@ -3593,11 +3593,11 @@ flowchart LR
 
 ### Sprint 14 — Sinistros
 **Objetivo:** gestão de sinistros.
-- [ ] App `claims`: model `Claim` (policy + covered_item obrigatórios)
-- [ ] CRUD com seleção de item coberto da apólice (do tenant)
-- [ ] Validações de datas (ocorrência ≤ aviso)
-- [ ] Anexos protegidos (BOs/laudos/fotos)
-- [ ] Filtros por status/apólice/período
+- [x] App `claims`: model `Claim` (policy + covered_item obrigatórios)
+- [x] CRUD com seleção de item coberto da apólice (do tenant)
+- [x] Validações de datas (ocorrência ≤ aviso)
+- [x] Anexos protegidos (BOs/laudos/fotos)
+- [x] Filtros por status/apólice/período
 
 **Entrega:** sinistros vinculados a item coberto de apólice.
 
