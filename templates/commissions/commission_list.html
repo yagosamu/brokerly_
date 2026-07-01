@@ -1,0 +1,178 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Comissões · Brokerly{% endblock %}
+{% block page_title %}Comissões{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Financeiro</li>
+<li class="breadcrumb-item">Comissões</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card { padding: 20px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); background: var(--brokerly-surface); }
+    .stat-card.pending { border-left: 4px solid var(--brokerly-warning); }
+    .stat-card.received { border-left: 4px solid var(--brokerly-info); }
+    .stat-card.paid { border-left: 4px solid var(--brokerly-success); }
+    .stat-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; letter-spacing: 0.4px; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--brokerly-text-strong); line-height: 1.1; margin-top: 4px; }
+    .stat-count { font-size: 12px; color: var(--brokerly-text-muted); margin-top: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card pending">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Pendente</div>
+                    <div class="stat-value text-warning">R$ {{ total_pending_amount|default:0|floatformat:2 }}</div>
+                    <div class="stat-count">{{ total_pending_count|default:0 }} comissão{{ total_pending_count|default:0|pluralize:'ões' }} a receber</div>
+                </div>
+                <i class="feather-clock fs-2 text-warning"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card received">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Recebida</div>
+                    <div class="stat-value text-info">R$ {{ total_received_amount|default:0|floatformat:2 }}</div>
+                    <div class="stat-count">{{ total_received_count|default:0 }} comissão{{ total_received_count|default:0|pluralize:'ões' }} aguardando repasse</div>
+                </div>
+                <i class="feather-download fs-2 text-info"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card paid">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Repassada</div>
+                    <div class="stat-value text-success">R$ {{ total_paid_amount|default:0|floatformat:2 }}</div>
+                    <div class="stat-count">{{ total_paid_count|default:0 }} comissão{{ total_paid_count|default:0|pluralize:'ões' }} concluída{{ total_paid_count|default:0|pluralize:'s' }}</div>
+                </div>
+                <i class="feather-check-square fs-2 text-success"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card stretch stretch-full">
+    <div class="card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="card-title mb-0">Comissões</h5>
+                <p class="fs-12 text-muted mb-0 mt-1">Uma comissão por apólice, gerada automaticamente na emissão.</p>
+            </div>
+        </div>
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Buscar</label>
+                <div class="position-relative">
+                    <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Nº da apólice ou cliente">
+                    <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pendente</option>
+                    <option value="received" {% if selected_status == 'received' %}selected{% endif %}>Recebida</option>
+                    <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Repassada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">De</label>
+                <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Até</label>
+                <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-light-brand w-100"><i class="feather-filter me-1"></i>Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if commissions %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Apólice · Cliente</th>
+                        <th class="fs-11 text-uppercase text-muted">Referência</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Prêmio base</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Taxa</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Valor</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for commission in commissions %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'insurance:policy_detail' commission.policy.id %}" class="fw-bold text-dark text-decoration-none">#{{ commission.policy.policy_number }}</a>
+                            <div class="fs-11 text-muted">{{ commission.policy.client.name|truncatechars:28 }}</div>
+                        </td>
+                        <td class="fs-12">{{ commission.reference_date|date:'d/m/Y' }}</td>
+                        <td class="text-end fs-12">R$ {{ commission.base_premium|floatformat:2 }}</td>
+                        <td class="text-end fs-12">{{ commission.insurer_rate|floatformat:2 }}%</td>
+                        <td class="text-end fw-bold">R$ {{ commission.insurer_amount|floatformat:2 }}</td>
+                        <td>
+                            {% if commission.status == 'pending' %}
+                            <span class="badge bg-soft-warning text-warning">{{ commission.get_status_display }}</span>
+                            {% elif commission.status == 'received' %}
+                            <span class="badge bg-soft-info text-info">{{ commission.get_status_display }}</span>
+                            {% elif commission.status == 'paid' %}
+                            <span class="badge bg-soft-success text-success">{{ commission.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'commissions:commission_detail' commission.id %}" class="btn btn-sm btn-light-brand" title="Ver"><i class="feather-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-dollar-sign fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhuma comissão encontrada</h6>
+            <p class="fs-12 text-muted mb-0">
+                {% if q or selected_status or date_from or date_to %}
+                Ajuste os filtros para ver outros resultados.
+                {% else %}
+                Comissões são geradas automaticamente ao emitir apólices.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

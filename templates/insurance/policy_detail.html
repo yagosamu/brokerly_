@@ -280,12 +280,17 @@
                     <i class="feather-file-plus me-1"></i>Anexos
                     <span class="badge bg-gray-200 text-dark ms-1">{{ policy_documents|length }}</span>
                 </a>
-                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
-                    <i class="feather-alert-circle me-1"></i>Abrir sinistro <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
-                </button>
-                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
-                    <i class="feather-file-plus me-1"></i>Endosso <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
-                </button>
+                {% if policy.commission %}
+                <a href="{% url 'commissions:commission_detail' policy.commission.id %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-dollar-sign me-1"></i>Ver comissão · R$ {{ policy.commission.insurer_amount|floatformat:2 }}
+                </a>
+                {% endif %}
+                <a href="{% url 'claims:claim_create' %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-alert-circle me-1"></i>Abrir sinistro
+                </a>
+                <a href="{% url 'insurance:endorsement_create' %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-file-plus me-1"></i>Novo endosso
+                </a>
             </div>
         </div>
     </div>

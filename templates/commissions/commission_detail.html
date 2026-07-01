@@ -1,0 +1,282 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Comissão · #{{ commission.policy.policy_number }} · Brokerly{% endblock %}
+{% block page_title %}Comissão da apólice #{{ commission.policy.policy_number }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'commissions:commission_list' %}">Comissões</a></li>
+<li class="breadcrumb-item">#{{ commission.policy.policy_number }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'commissions:commission_list' %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .com-hero { display: flex; align-items: center; gap: 16px; }
+    .com-icon {
+        width: 56px; height: 56px;
+        border-radius: var(--brokerly-radius-md);
+        background: rgba(23, 198, 102, 0.14);
+        color: var(--brokerly-success);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 22px;
+    }
+    .kpi-card { padding: 16px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); }
+    .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--brokerly-text-strong); }
+    .kpi-value.pos { color: var(--brokerly-success); }
+    .kpi-value.neg { color: var(--brokerly-warning); }
+    .info-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--brokerly-border); }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; letter-spacing: 0.4px; }
+    .info-row-value { font-size: 14px; color: var(--brokerly-text-strong); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="com-hero">
+                <span class="com-icon"><i class="feather-dollar-sign"></i></span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">R$ {{ commission.insurer_amount|floatformat:2 }}</h4>
+                        {% if commission.status == 'pending' %}
+                        <span class="badge bg-soft-warning text-warning">{{ commission.get_status_display }}</span>
+                        {% elif commission.status == 'received' %}
+                        <span class="badge bg-soft-info text-info">{{ commission.get_status_display }}</span>
+                        {% elif commission.status == 'paid' %}
+                        <span class="badge bg-soft-success text-success">{{ commission.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="fs-12 text-muted mt-1">
+                        <a href="{% url 'insurance:policy_detail' commission.policy.id %}" class="text-decoration-none">#{{ commission.policy.policy_number }}</a>
+                        · <a href="{% url 'clients:client_detail' commission.policy.client.id %}" class="text-decoration-none">{{ commission.policy.client.name }}</a>
+                        · {{ commission.policy.insurer.name }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4 fs-12 text-muted">
+                <div>
+                    <div class="text-uppercase fs-11">Referência</div>
+                    <div class="text-dark fw-semibold">{{ commission.reference_date|date:'d/m/Y' }}</div>
+                </div>
+                {% if commission.received_at %}
+                <div>
+                    <div class="text-uppercase fs-11">Recebida em</div>
+                    <div class="text-dark fw-semibold">{{ commission.received_at|date:'d/m/Y' }}</div>
+                </div>
+                {% endif %}
+                {% if commission.paid_at %}
+                <div>
+                    <div class="text-uppercase fs-11">Repassada em</div>
+                    <div class="text-dark fw-semibold">{{ commission.paid_at|date:'d/m/Y' }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Prêmio base</div><div class="kpi-value">R$ {{ commission.base_premium|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Taxa seguradora</div><div class="kpi-value">{{ commission.insurer_rate|floatformat:2 }}%</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Total repassado</div><div class="kpi-value pos">R$ {{ total_split_amount|floatformat:2 }}</div></div></div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Restante disponível</div>
+            <div class="kpi-value {% if remaining_amount == 0 %}pos{% else %}neg{% endif %}">R$ {{ remaining_amount|floatformat:2 }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="card-title mb-0">Repasses</h5>
+                    <p class="fs-12 text-muted mb-0 mt-1">Distribuição da comissão entre agentes e produtores.</p>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if splits %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="fs-11 text-uppercase text-muted">Beneficiário</th>
+                                <th class="fs-11 text-uppercase text-muted">Tipo</th>
+                                <th class="fs-11 text-uppercase text-muted text-end">Taxa</th>
+                                <th class="fs-11 text-uppercase text-muted text-end">Valor</th>
+                                <th class="fs-11 text-uppercase text-muted">Status</th>
+                                <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for split in splits %}
+                            <tr>
+                                <td>
+                                    {% if split.beneficiary_type == 'agent' and split.agent %}
+                                    <a href="{% url 'partners:agent_detail' split.agent.id %}" class="text-decoration-none text-dark fw-bold">{{ split.agent.name }}</a>
+                                    <div class="fs-11 text-muted">{{ split.agent.document }}</div>
+                                    {% elif split.beneficiary_type == 'producer' and split.producer %}
+                                    <a href="{% url 'partners:producer_detail' split.producer.id %}" class="text-decoration-none text-dark fw-bold">{{ split.producer.name }}</a>
+                                    <div class="fs-11 text-muted">{{ split.producer.document }}</div>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if split.beneficiary_type == 'agent' %}
+                                    <span class="badge bg-soft-warning text-warning"><i class="feather-at-sign me-1"></i>Agente</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-primary text-primary"><i class="feather-user me-1"></i>Produtor</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fs-12">{{ split.rate|floatformat:2 }}%</td>
+                                <td class="text-end fw-bold">R$ {{ split.amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if split.status == 'pending' %}
+                                    <span class="badge bg-soft-warning text-warning">{{ split.get_status_display }}</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-success text-success">{{ split.get_status_display }}{% if split.paid_at %} · {{ split.paid_at|date:'d/m/Y' }}{% endif %}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="{% url 'commissions:split_delete' split.id %}" class="d-inline" onsubmit="return confirm('Excluir este repasse?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-light-brand text-danger" title="Excluir">
+                                            <i class="feather-trash-2"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="feather-briefcase fs-2 text-gray-500 d-block mb-2"></i>
+                    <h6 class="mb-1 fs-14">Nenhum repasse cadastrado</h6>
+                    <p class="fs-12 text-muted mb-0">Use o formulário ao lado para adicionar o primeiro.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title">Dados da comissão</h5>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-row-label">Apólice</span>
+                    <span class="info-row-value">
+                        <a href="{% url 'insurance:policy_detail' commission.policy.id %}" class="text-decoration-none">#{{ commission.policy.policy_number }}</a>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Cliente</span>
+                    <span class="info-row-value">
+                        <a href="{% url 'clients:client_detail' commission.policy.client.id %}" class="text-decoration-none">{{ commission.policy.client.name }}</a>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Seguradora</span>
+                    <span class="info-row-value">{{ commission.policy.insurer.name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Vigência</span>
+                    <span class="info-row-value">
+                        {% if commission.policy.start_date %}
+                        {{ commission.policy.start_date|date:'d/m/Y' }}
+                        {% if commission.policy.end_date %} → {{ commission.policy.end_date|date:'d/m/Y' }}{% endif %}
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-plus me-1"></i>Adicionar repasse</h5>
+            </div>
+            <div class="card-body">
+                {% if split_form.non_field_errors %}
+                <div class="alert alert-danger py-2 mb-3 fs-12">{{ split_form.non_field_errors|first }}</div>
+                {% endif %}
+                <form method="post" action="{% url 'commissions:split_create' commission.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fs-11 text-uppercase text-muted">Tipo</label>
+                        {{ split_form.beneficiary_type|add_class:"form-select form-select-sm" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-11 text-uppercase text-muted">Agente</label>
+                        {{ split_form.agent|add_class:"form-select form-select-sm" }}
+                        <small class="text-muted fs-11">Preencha se for repasse pra agente.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-11 text-uppercase text-muted">Produtor</label>
+                        {{ split_form.producer|add_class:"form-select form-select-sm" }}
+                        <small class="text-muted fs-11">Preencha se for repasse pra produtor.</small>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fs-11 text-uppercase text-muted">Taxa (%)</label>
+                            {{ split_form.rate|add_class:"form-control form-control-sm"|attr:"step:0.01" }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fs-11 text-uppercase text-muted">Valor (R$)</label>
+                            {{ split_form.amount|add_class:"form-control form-control-sm"|attr:"step:0.01" }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="feather-plus me-1"></i>Adicionar</button>
+                    {% if split_form.errors %}
+                    <div class="mt-2">
+                        {% for field, errors in split_form.errors.items %}
+                        <div class="invalid-feedback d-block fs-11">{{ field }}: {{ errors|first }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-check-square me-1"></i>Workflow</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'commissions:commission_status' commission.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fs-11 text-uppercase text-muted">Status</label>
+                        {{ status_form.status|add_class:"form-select form-select-sm" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-11 text-uppercase text-muted">Recebida em</label>
+                        {{ status_form.received_at|add_class:"form-control form-control-sm" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-11 text-uppercase text-muted">Repassada em</label>
+                        {{ status_form.paid_at|add_class:"form-control form-control-sm" }}
+                    </div>
+                    <button type="submit" class="btn btn-light-brand w-100">Atualizar status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
