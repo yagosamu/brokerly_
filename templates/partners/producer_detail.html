@@ -1,0 +1,155 @@
+{% extends 'base_app.html' %}
+
+{% block title %}{{ producer.name }} · Brokerly{% endblock %}
+{% block page_title %}{{ producer.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'partners:producer_list' %}">Produtores</a></li>
+<li class="breadcrumb-item">{{ producer.name|truncatechars:40 }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{% url 'partners:producer_list' %}" class="btn btn-sm btn-light-brand">
+        <i class="feather-arrow-left me-1"></i>Voltar
+    </a>
+    <a href="{% url 'partners:producer_update' producer.id %}" class="btn btn-sm btn-primary">
+        <i class="feather-edit me-1"></i>Editar
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .prod-hero { display: flex; align-items: center; gap: 16px; }
+    .prod-avatar {
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        background: rgba(23, 198, 102, 0.14);
+        color: var(--brokerly-success);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 18px;
+    }
+    .info-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--brokerly-border); }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; letter-spacing: 0.4px; }
+    .info-row-value { font-size: 14px; color: var(--brokerly-text-strong); }
+    .kpi-card { padding: 16px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); }
+    .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--brokerly-text-strong); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="prod-hero">
+                <span class="prod-avatar">{{ producer.name|slice:":1"|upper }}</span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">{{ producer.name }}</h4>
+                        {% if producer.entity_type == 'person' %}
+                        <span class="badge bg-soft-primary text-primary">Pessoa Física</span>
+                        {% else %}
+                        <span class="badge bg-soft-warning text-warning">Pessoa Jurídica</span>
+                        {% endif %}
+                        {% if producer.agent %}
+                        <a href="{% url 'partners:agent_detail' producer.agent.id %}" class="badge bg-soft-info text-info text-decoration-none">
+                            <i class="feather-at-sign me-1"></i>Sob {{ producer.agent.name|truncatechars:24 }}
+                        </a>
+                        {% else %}
+                        <span class="badge bg-soft-info text-info">Direto na corretora</span>
+                        {% endif %}
+                        {% if producer.is_active %}
+                        <span class="badge bg-soft-success text-success">Ativo</span>
+                        {% else %}
+                        <span class="badge bg-soft-danger text-danger">Inativo</span>
+                        {% endif %}
+                    </div>
+                    <div class="fs-12 text-muted mt-1">{{ producer.document }}</div>
+                </div>
+            </div>
+            <div class="d-flex gap-4 fs-12 text-muted">
+                <div>
+                    <div class="text-uppercase fs-11">Cadastrado em</div>
+                    <div class="text-dark fw-semibold">{{ producer.created_at|date:'d/m/Y' }}</div>
+                </div>
+                <div>
+                    <div class="text-uppercase fs-11">Atualizado</div>
+                    <div class="text-dark fw-semibold">{{ producer.updated_at|date:'d/m/Y H:i' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4"><div class="kpi-card"><div class="kpi-label">Comissão padrão</div><div class="kpi-value">{{ producer.default_commission_rate|floatformat:2 }}%</div></div></div>
+    <div class="col-md-4"><div class="kpi-card"><div class="kpi-label">Vínculo</div><div class="kpi-value fs-5">{% if producer.agent %}Via agente{% else %}Direto{% endif %}</div></div></div>
+    <div class="col-md-4"><div class="kpi-card"><div class="kpi-label">Acesso ao sistema</div><div class="kpi-value fs-5">{% if producer.user %}<span class="text-success">Vinculado</span>{% else %}<span class="text-muted">Sem login</span>{% endif %}</div></div></div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Dados</h5></div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-row-label">Nome / Razão social</span>
+                    <span class="info-row-value">{{ producer.name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">{% if producer.entity_type == 'person' %}CPF{% else %}CNPJ{% endif %}</span>
+                    <span class="info-row-value">{{ producer.document }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Vínculo comercial</span>
+                    <span class="info-row-value">
+                        {% if producer.agent %}
+                        <a href="{% url 'partners:agent_detail' producer.agent.id %}" class="text-decoration-none">{{ producer.agent.name }}</a>
+                        <span class="text-muted fs-12 ms-1">· agente</span>
+                        {% else %}
+                        Direto na corretora
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">E-mail</span>
+                    <span class="info-row-value">{{ producer.email|default:'—' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Telefone</span>
+                    <span class="info-row-value">{{ producer.phone|default:'—' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Usuário do sistema</span>
+                    <span class="info-row-value">
+                        {% if producer.user %}{{ producer.user.get_full_name|default:producer.user.email }}{% else %}<span class="text-muted">Sem login vinculado</span>{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Atalhos</h5></div>
+            <div class="card-body d-flex flex-column gap-2">
+                {% if producer.agent %}
+                <a href="{% url 'partners:agent_detail' producer.agent.id %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-at-sign me-1"></i>Ver agente
+                </a>
+                {% endif %}
+                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
+                    <i class="feather-dollar-sign me-1"></i>Comissões <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+                </button>
+                <button type="button" class="btn btn-light-brand w-100 text-start" disabled>
+                    <i class="feather-file-text me-1"></i>Propostas do produtor <span class="badge bg-gray-200 text-dark ms-1">em breve</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Produtores · Brokerly{% endblock %}
+{% block page_title %}Produtores{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Parceiros</li>
+<li class="breadcrumb-item">Produtores</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'partners:producer_create' %}" class="btn btn-sm btn-primary">
+    <i class="feather-plus me-1"></i>Novo produtor
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h5 class="card-title mb-0">Produtores cadastrados</h5>
+            <p class="fs-12 text-muted mb-0 mt-1">{{ total }} produtor{{ total|pluralize:'es' }} na sua carteira comercial.</p>
+        </div>
+        <form method="get" class="d-flex gap-2 flex-wrap">
+            <div class="position-relative">
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Buscar nome ou documento" style="min-width: 240px;">
+                <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+            </div>
+            <select name="entity_type" class="form-select form-select-sm" style="min-width: 140px;">
+                <option value="">Todos os tipos</option>
+                {% for value, label in entity_types %}
+                <option value="{{ value }}" {% if selected_entity_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="agent" class="form-select form-select-sm" style="min-width: 180px;">
+                <option value="">Todos os vínculos</option>
+                <option value="direct" {% if selected_agent == 'direct' %}selected{% endif %}>Direto na corretora</option>
+                {% for ag in search_form.agent.field.queryset %}
+                <option value="{{ ag.id }}" {% if selected_agent == ag.id|stringformat:"s" %}selected{% endif %}>{{ ag.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="form-select form-select-sm" style="min-width: 120px;">
+                <option value="">Todos</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Ativos</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inativos</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-light-brand"><i class="feather-filter me-1"></i>Filtrar</button>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if producers %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Produtor</th>
+                        <th class="fs-11 text-uppercase text-muted">Tipo</th>
+                        <th class="fs-11 text-uppercase text-muted">Documento</th>
+                        <th class="fs-11 text-uppercase text-muted">Vínculo</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Comissão padrão</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producer in producers %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'partners:producer_detail' producer.id %}" class="fw-bold text-dark text-decoration-none">{{ producer.name }}</a>
+                            {% if producer.email %}<div class="fs-11 text-muted">{{ producer.email }}</div>{% endif %}
+                        </td>
+                        <td>
+                            {% if producer.entity_type == 'person' %}
+                            <span class="badge bg-soft-primary text-primary">PF</span>
+                            {% else %}
+                            <span class="badge bg-soft-warning text-warning">PJ</span>
+                            {% endif %}
+                        </td>
+                        <td class="fs-12 text-muted">{{ producer.document }}</td>
+                        <td class="fs-12">
+                            {% if producer.agent %}
+                            <a href="{% url 'partners:agent_detail' producer.agent.id %}" class="text-decoration-none text-dark">{{ producer.agent.name }}</a>
+                            {% else %}
+                            <span class="badge bg-soft-info text-info">Direto</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">{{ producer.default_commission_rate|floatformat:2 }}%</td>
+                        <td>
+                            {% if producer.is_active %}
+                            <span class="badge bg-soft-success text-success">Ativo</span>
+                            {% else %}
+                            <span class="badge bg-soft-danger text-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'partners:producer_detail' producer.id %}" class="btn btn-sm btn-light-brand" title="Ver"><i class="feather-eye"></i></a>
+                            <a href="{% url 'partners:producer_update' producer.id %}" class="btn btn-sm btn-light-brand" title="Editar"><i class="feather-edit"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-user fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhum produtor encontrado</h6>
+            <p class="fs-12 text-muted mb-3">
+                {% if q or selected_entity_type or selected_agent or selected_status %}
+                Ajuste os filtros para ver outros resultados.
+                {% else %}
+                Cadastre produtores para vincular vendas e calcular repasses.
+                {% endif %}
+            </p>
+            <a href="{% url 'partners:producer_create' %}" class="btn btn-sm btn-primary">
+                <i class="feather-plus me-1"></i>Novo produtor
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
