@@ -3621,11 +3621,11 @@ flowchart LR
 
 ### Sprint 17 — Comissões e Repasses
 **Objetivo:** financeiro de comissões.
-- [ ] App `commissions`: models `Commission` e `CommissionSplit`
-- [ ] `services.py`: cálculo da comissão na geração da apólice
-- [ ] Geração de repasses por agente/produtor
-- [ ] Validação: soma de repasses ≤ comissão recebida
-- [ ] Telas de acompanhamento de comissões/repasses
+- [x] App `commissions`: models `Commission` e `CommissionSplit`
+- [x] `services.py`: cálculo da comissão na geração da apólice
+- [x] Geração de repasses por agente/produtor
+- [x] Validação: soma de repasses ≤ comissão recebida
+- [x] Telas de acompanhamento de comissões/repasses
 
 **Entrega:** comissões e repasses calculados e visíveis.
 
