@@ -3612,10 +3612,10 @@ flowchart LR
 
 ### Sprint 16 — Agentes e Produtores
 **Objetivo:** hierarquia comercial.
-- [ ] App `partners`: models `Agent` e `Producer`
-- [ ] CRUDs isolados por tenant (pessoa/empresa, `user` opcional)
-- [ ] Vínculo produtor → agente ou direto à corretora
-- [ ] Taxas de comissão padrão
+- [x] App `partners`: models `Agent` e `Producer`
+- [x] CRUDs isolados por tenant (pessoa/empresa, `user` opcional)
+- [x] Vínculo produtor → agente ou direto à corretora
+- [x] Taxas de comissão padrão
 
 **Entrega:** hierarquia de agentes/produtores cadastrável.
 
