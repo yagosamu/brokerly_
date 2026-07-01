@@ -12,5 +12,6 @@ urlpatterns = [
     path('sinistros/', include('claims.urls')),
     path('', include('insurers.urls')),
     path('', include('insurance.urls')),
+    path('', include('partners.urls')),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
 ]
