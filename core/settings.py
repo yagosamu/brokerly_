@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'insurance',
     'claims',
     'partners',
+    'commissions',
 ]
 
 MIDDLEWARE = [
