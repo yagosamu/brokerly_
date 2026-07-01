@@ -1,0 +1,208 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Endosso #{{ endorsement.endorsement_number }} · Brokerly{% endblock %}
+{% block page_title %}Endosso #{{ endorsement.endorsement_number }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'insurance:endorsement_list' %}">Endossos</a></li>
+<li class="breadcrumb-item">#{{ endorsement.endorsement_number }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{% url 'insurance:endorsement_list' %}" class="btn btn-sm btn-light-brand">
+        <i class="feather-arrow-left me-1"></i>Voltar
+    </a>
+    <a href="{% url 'insurance:endorsement_update' endorsement.id %}" class="btn btn-sm btn-primary">
+        <i class="feather-edit me-1"></i>Editar
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .end-hero { display: flex; align-items: center; gap: 16px; }
+    .end-icon {
+        width: 56px; height: 56px;
+        border-radius: var(--brokerly-radius-md);
+        background: rgba(61, 199, 190, 0.14);
+        color: var(--brokerly-info);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 22px;
+    }
+    .info-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--brokerly-border); }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; letter-spacing: 0.4px; }
+    .info-row-value { font-size: 14px; color: var(--brokerly-text-strong); }
+    .kpi-card { padding: 16px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); }
+    .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--brokerly-text-strong); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="end-hero">
+                <span class="end-icon"><i class="feather-file-plus"></i></span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">#{{ endorsement.endorsement_number }}</h4>
+                        {% if endorsement.type == 'increase' %}
+                        <span class="badge bg-soft-success text-success">{{ endorsement.get_type_display }}</span>
+                        {% elif endorsement.type == 'decrease' %}
+                        <span class="badge bg-soft-warning text-warning">{{ endorsement.get_type_display }}</span>
+                        {% elif endorsement.type == 'cancellation' %}
+                        <span class="badge bg-soft-danger text-danger">{{ endorsement.get_type_display }}</span>
+                        {% else %}
+                        <span class="badge bg-soft-info text-info">{{ endorsement.get_type_display }}</span>
+                        {% endif %}
+                        {% if endorsement.status == 'draft' %}
+                        <span class="badge bg-gray-200 text-dark">{{ endorsement.get_status_display }}</span>
+                        {% elif endorsement.status == 'submitted' %}
+                        <span class="badge bg-soft-info text-info">{{ endorsement.get_status_display }}</span>
+                        {% elif endorsement.status == 'approved' %}
+                        <span class="badge bg-soft-success text-success">{{ endorsement.get_status_display }}</span>
+                        {% elif endorsement.status == 'rejected' %}
+                        <span class="badge bg-soft-danger text-danger">{{ endorsement.get_status_display }}</span>
+                        {% elif endorsement.status == 'effective' %}
+                        <span class="badge bg-soft-primary text-primary">{{ endorsement.get_status_display }}</span>
+                        {% elif endorsement.status == 'canceled' %}
+                        <span class="badge bg-gray-200 text-dark">{{ endorsement.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="fs-12 text-muted mt-1">
+                        <a href="{% url 'insurance:policy_detail' endorsement.policy.id %}" class="text-decoration-none">#{{ endorsement.policy.policy_number }}</a>
+                        · <a href="{% url 'clients:client_detail' endorsement.policy.client.id %}" class="text-decoration-none">{{ endorsement.policy.client.name }}</a>
+                        · {{ endorsement.policy.insurer.name }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4 fs-12 text-muted">
+                <div>
+                    <div class="text-uppercase fs-11">Vigência</div>
+                    <div class="text-dark fw-semibold">{{ endorsement.effective_date|date:'d/m/Y' }}</div>
+                </div>
+                {% if endorsement.created_by %}
+                <div>
+                    <div class="text-uppercase fs-11">Registrado por</div>
+                    <div class="text-dark fw-semibold">{{ endorsement.created_by.get_full_name|default:endorsement.created_by.email }}</div>
+                </div>
+                {% endif %}
+                <div>
+                    <div class="text-uppercase fs-11">Atualizado</div>
+                    <div class="text-dark fw-semibold">{{ endorsement.updated_at|date:'d/m/Y H:i' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Alteração no prêmio</div>
+            {% if endorsement.premium_change > 0 %}
+            <div class="kpi-value text-success">+ R$ {{ endorsement.premium_change|floatformat:2 }}</div>
+            {% elif endorsement.premium_change < 0 %}
+            <div class="kpi-value text-danger">R$ {{ endorsement.premium_change|floatformat:2 }}</div>
+            {% else %}
+            <div class="kpi-value text-muted">R$ 0,00</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Prêmio total (apólice)</div><div class="kpi-value">R$ {{ endorsement.policy.total_premium|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Tipo</div><div class="kpi-value fs-5">{{ endorsement.get_type_display }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Anexos</div><div class="kpi-value">{{ endorsement_documents|length }}</div></div></div>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'info' or not active_tab %}active{% endif %}" href="?tab=info">
+            <i class="feather-file-text me-1"></i>Informações
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'attachments' %}active{% endif %}" href="?tab=attachments">
+            <i class="feather-file-plus me-1"></i>Anexos
+            <span class="badge bg-gray-200 text-dark ms-1">{{ endorsement_documents|length }}</span>
+        </a>
+    </li>
+</ul>
+
+{% if active_tab == 'attachments' %}
+{% include 'documents/_attachments.html' with content_type_id=attachment_content_type_id object_id=endorsement.id documents=endorsement_documents can_upload=can_upload_documents can_delete=can_delete_documents next_url=request.get_full_path %}
+{% else %}
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Dados do endosso</h5></div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-row-label">Número</span>
+                    <span class="info-row-value">#{{ endorsement.endorsement_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Apólice</span>
+                    <span class="info-row-value">
+                        <a href="{% url 'insurance:policy_detail' endorsement.policy.id %}" class="text-decoration-none">#{{ endorsement.policy.policy_number }}</a>
+                        <span class="text-muted fs-12 ms-1">· {{ endorsement.policy.insurer.name }}</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Tipo</span>
+                    <span class="info-row-value">{{ endorsement.get_type_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Data de vigência</span>
+                    <span class="info-row-value">{{ endorsement.effective_date|date:'d/m/Y' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Alteração do prêmio</span>
+                    <span class="info-row-value">
+                        {% if endorsement.premium_change > 0 %}
+                        <span class="text-success">+ R$ {{ endorsement.premium_change|floatformat:2 }}</span>
+                        {% elif endorsement.premium_change < 0 %}
+                        <span class="text-danger">R$ {{ endorsement.premium_change|floatformat:2 }}</span>
+                        {% else %}
+                        <span class="text-muted">R$ 0,00 (alteração de dados)</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Descrição da alteração</h5></div>
+            <div class="card-body">
+                {% if endorsement.description %}
+                <p class="mb-0" style="white-space: pre-line;">{{ endorsement.description }}</p>
+                {% else %}
+                <p class="fs-12 text-muted mb-0">Sem descrição registrada.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Atalhos</h5></div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="?tab=attachments" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-file-plus me-1"></i>Anexos
+                    <span class="badge bg-gray-200 text-dark ms-1">{{ endorsement_documents|length }}</span>
+                </a>
+                <a href="{% url 'insurance:policy_detail' endorsement.policy.id %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-shield me-1"></i>Ver apólice #{{ endorsement.policy.policy_number }}
+                </a>
+                <a href="{% url 'clients:client_detail' endorsement.policy.client.id %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-user me-1"></i>Ver cliente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
