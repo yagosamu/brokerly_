@@ -1,0 +1,75 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Atualizar renovação · Brokerly{% endblock %}
+{% block page_title %}Atualizar renovação{% if object %} · #{{ object.policy.policy_number }}{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'renewals:renewal_list' %}">Renovações</a></li>
+{% if object %}<li class="breadcrumb-item"><a href="{% url 'renewals:renewal_detail' object.id %}">#{{ object.policy.policy_number }}</a></li>{% endif %}
+<li class="breadcrumb-item">Atualizar</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% if object %}{% url 'renewals:renewal_detail' object.id %}{% else %}{% url 'renewals:renewal_list' %}{% endif %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ form.non_field_errors|first }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Status da renovação</h5>
+                    <p class="fs-12 text-muted mb-0 mt-1">
+                        Ajuste o status conforme a negociação avança. Para gerar a nova apólice, use o botão "Renovar apólice" na tela de detalhe.
+                    </p>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Status <span class="text-danger">*</span></label>
+                        {{ form.status|add_class:"form-select" }}
+                        {% if form.status.errors %}<div class="invalid-feedback d-block">{{ form.status.errors|first }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.notes.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Anotações</label>
+                        {{ form.notes|add_class:"form-control"|attr:"rows:4"|attr:"placeholder:Registre a última interação com o cliente, objeções, propostas em análise." }}
+                        {% if form.notes.errors %}<div class="invalid-feedback d-block">{{ form.notes.errors|first }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    <a href="{% if object %}{% url 'renewals:renewal_detail' object.id %}{% else %}{% url 'renewals:renewal_list' %}{% endif %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header"><h5 class="card-title">Apólice referenciada</h5></div>
+                <div class="card-body fs-12">
+                    <p class="mb-2">
+                        <strong class="text-dark">#{{ object.policy.policy_number }}</strong><br>
+                        <span class="text-muted">{{ object.policy.client.name }}</span>
+                    </p>
+                    <p class="mb-2 text-muted">
+                        Vence em <strong class="text-dark">{{ object.due_date|date:'d/m/Y' }}</strong> · {{ object.due_date|timeuntil }}
+                    </p>
+                    <a href="{% url 'insurance:policy_detail' object.policy.id %}" class="btn btn-sm btn-light-brand w-100">
+                        <i class="feather-shield me-1"></i>Ver apólice
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

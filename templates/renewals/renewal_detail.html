@@ -1,0 +1,210 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Renovação · #{{ renewal.policy.policy_number }} · Brokerly{% endblock %}
+{% block page_title %}Renovação da apólice #{{ renewal.policy.policy_number }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'renewals:renewal_list' %}">Renovações</a></li>
+<li class="breadcrumb-item">#{{ renewal.policy.policy_number }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{% url 'renewals:renewal_list' %}" class="btn btn-sm btn-light-brand"><i class="feather-arrow-left me-1"></i>Voltar</a>
+    <a href="{% url 'renewals:renewal_update' renewal.id %}" class="btn btn-sm btn-light-brand"><i class="feather-edit me-1"></i>Atualizar status</a>
+    {% if renewal.status != 'renewed' and request.user.role in 'owner,manager,broker,agent' %}
+    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#renewModal">
+        <i class="feather-check-square me-1"></i>Renovar apólice
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ren-hero { display: flex; align-items: center; gap: 16px; }
+    .ren-icon {
+        width: 56px; height: 56px;
+        border-radius: var(--brokerly-radius-md);
+        background: rgba(255, 162, 29, 0.14);
+        color: var(--brokerly-warning);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 22px;
+    }
+    .info-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--brokerly-border); }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; letter-spacing: 0.4px; }
+    .info-row-value { font-size: 14px; color: var(--brokerly-text-strong); }
+    .kpi-card { padding: 16px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); }
+    .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--brokerly-text-strong); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="ren-hero">
+                <span class="ren-icon"><i class="feather-clock"></i></span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">Renovação · #{{ renewal.policy.policy_number }}</h4>
+                        {% if renewal.status == 'pending' %}
+                        <span class="badge bg-soft-warning text-warning">{{ renewal.get_status_display }}</span>
+                        {% elif renewal.status == 'in_progress' %}
+                        <span class="badge bg-soft-info text-info">{{ renewal.get_status_display }}</span>
+                        {% elif renewal.status == 'renewed' %}
+                        <span class="badge bg-soft-success text-success">{{ renewal.get_status_display }}</span>
+                        {% elif renewal.status == 'lost' %}
+                        <span class="badge bg-soft-danger text-danger">{{ renewal.get_status_display }}</span>
+                        {% elif renewal.status == 'not_renewed' %}
+                        <span class="badge bg-gray-200 text-dark">{{ renewal.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="fs-12 text-muted mt-1">
+                        <a href="{% url 'insurance:policy_detail' renewal.policy.id %}" class="text-decoration-none">#{{ renewal.policy.policy_number }}</a>
+                        · <a href="{% url 'clients:client_detail' renewal.policy.client.id %}" class="text-decoration-none">{{ renewal.policy.client.name }}</a>
+                        · {{ renewal.policy.insurer.name }}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4 fs-12 text-muted">
+                <div>
+                    <div class="text-uppercase fs-11">Vencimento</div>
+                    <div class="text-dark fw-semibold">{{ renewal.due_date|date:'d/m/Y' }}</div>
+                </div>
+                <div>
+                    <div class="text-uppercase fs-11">Tempo restante</div>
+                    <div class="text-dark fw-semibold">{{ renewal.due_date|timeuntil }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Prêmio atual</div><div class="kpi-value">R$ {{ renewal.policy.total_premium|floatformat:2 }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Vigência atual</div><div class="kpi-value fs-6">{% if renewal.policy.start_date %}{{ renewal.policy.start_date|date:'d/m/Y' }}{% if renewal.policy.end_date %} → {{ renewal.policy.end_date|date:'d/m/Y' }}{% endif %}{% else %}—{% endif %}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-label">Comissão</div><div class="kpi-value">{{ renewal.policy.commission_rate|floatformat:2 }}%</div></div></div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Nova apólice</div>
+            {% if renewal.new_policy %}
+            <div class="kpi-value fs-5"><a href="{% url 'insurance:policy_detail' renewal.new_policy.id %}" class="text-decoration-none">#{{ renewal.new_policy.policy_number }}</a></div>
+            {% else %}
+            <div class="kpi-value text-muted fs-5">—</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Dados da apólice original</h5></div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-row-label">Número</span>
+                    <span class="info-row-value">
+                        <a href="{% url 'insurance:policy_detail' renewal.policy.id %}" class="text-decoration-none">#{{ renewal.policy.policy_number }}</a>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Cliente</span>
+                    <span class="info-row-value">
+                        <a href="{% url 'clients:client_detail' renewal.policy.client.id %}" class="text-decoration-none">{{ renewal.policy.client.name }}</a>
+                        <span class="text-muted fs-12 ms-1">{{ renewal.policy.client.document }}</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Seguradora · Ramo</span>
+                    <span class="info-row-value">{{ renewal.policy.insurer.name }} · {{ renewal.policy.line_of_business.name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Prêmio total</span>
+                    <span class="info-row-value">R$ {{ renewal.policy.total_premium|floatformat:2 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Vigência</span>
+                    <span class="info-row-value">
+                        {% if renewal.policy.start_date %}{{ renewal.policy.start_date|date:'d/m/Y' }}{% if renewal.policy.end_date %} → {{ renewal.policy.end_date|date:'d/m/Y' }}{% endif %}{% else %}—{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {% if renewal.notes %}
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Anotações da renovação</h5></div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ renewal.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Fluxo da renovação</h5></div>
+            <div class="card-body fs-12 text-muted">
+                <p class="mb-2"><span class="badge bg-soft-warning text-warning">Pendente</span> criada automaticamente pelo sistema.</p>
+                <p class="mb-2"><span class="badge bg-soft-info text-info">Em andamento</span> quando você começa a negociar.</p>
+                <p class="mb-2"><span class="badge bg-soft-success text-success">Renovada</span> apólice nova emitida com sucesso.</p>
+                <p class="mb-0"><span class="badge bg-soft-danger text-danger">Perdida</span> ou <span class="badge bg-gray-200 text-dark">Não renovada</span> quando o cliente não fecha.</p>
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Atalhos</h5></div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="{% url 'insurance:policy_detail' renewal.policy.id %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-shield me-1"></i>Ver apólice original
+                </a>
+                <a href="{% url 'clients:client_detail' renewal.policy.client.id %}" class="btn btn-light-brand w-100 text-start">
+                    <i class="feather-user me-1"></i>Ver cliente
+                </a>
+                {% if renewal.new_policy %}
+                <a href="{% url 'insurance:policy_detail' renewal.new_policy.id %}" class="btn btn-soft-success w-100 text-start bg-soft-success text-success">
+                    <i class="feather-check-square me-1"></i>Ver nova apólice
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if renewal.status != 'renewed' and request.user.role in 'owner,manager,broker,agent' %}
+<div class="modal fade" id="renewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="{% url 'renewals:renewal_renew' renewal.id %}">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="feather-check-square me-2"></i>Renovar apólice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fs-12 text-muted">
+                        Vamos clonar a apólice <strong>#{{ renewal.policy.policy_number }}</strong> com nova vigência
+                        (12 meses a partir do dia seguinte ao vencimento atual). Itens cobertos serão clonados. A apólice
+                        original será marcada como <strong>Renovada</strong>.
+                    </p>
+                    <label for="newPolicyNumberInput" class="form-label fs-12 text-uppercase text-muted">Número da nova apólice <span class="text-danger">*</span></label>
+                    <input type="text" id="newPolicyNumberInput" name="new_policy_number" class="form-control" required maxlength="40" placeholder="Ex.: AP-2027-001" autocomplete="off">
+                    <small class="text-muted fs-11 d-block mt-1">Único na sua corretora.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light-brand" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="feather-check-square me-1"></i>Renovar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

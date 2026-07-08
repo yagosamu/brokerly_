@@ -291,6 +291,13 @@
                 <a href="{% url 'insurance:endorsement_create' %}" class="btn btn-light-brand w-100 text-start">
                     <i class="feather-file-plus me-1"></i>Novo endosso
                 </a>
+                {% with renewal=policy.renewals.first %}
+                {% if renewal %}
+                <a href="{% url 'renewals:renewal_detail' renewal.id %}" class="btn btn-soft-warning w-100 text-start bg-soft-warning text-warning">
+                    <i class="feather-clock me-1"></i>Renovação · {{ renewal.get_status_display }}
+                </a>
+                {% endif %}
+                {% endwith %}
             </div>
         </div>
     </div>
