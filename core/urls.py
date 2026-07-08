@@ -14,6 +14,7 @@ urlpatterns = [
     path('crm/', include('crm.urls')),
     path('notifications/', include('notifications.urls')),
     path('renovacoes/', include('renewals.urls')),
+    path('ai/', include('ai_agents.urls')),
     path('', include('insurers.urls')),
     path('', include('insurance.urls')),
     path('', include('partners.urls')),

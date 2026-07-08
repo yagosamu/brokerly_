@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'crm',
     'notifications',
     'renewals',
+    'ai_agents',
 ]
 
 MIDDLEWARE = [
@@ -160,3 +161,6 @@ DEFAULT_FROM_EMAIL = env(
     'DEFAULT_FROM_EMAIL',
     default='Brokerly <no-reply@localhost>',
 )
+
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
+OPENAI_MODEL = env('OPENAI_MODEL', default='gpt-5.5-mini')
