@@ -3660,13 +3660,22 @@ flowchart LR
 
 ### Sprint 20 — Renovações
 **Objetivo:** ciclo de renovação automatizado.
-- [ ] Model `Renewal` + CRUD/lista com filtros
-- [ ] Task Beat `check_renewals_due` (cria/atualiza renovações por vencimento)
-- [ ] Task Beat `expire_policies`
-- [ ] Notificação de renovações próximas
-- [ ] Renovar gera nova apólice e atualiza status
+- [x] Model `Renewal` + CRUD/lista com filtros
+- [x] Task Beat `check_renewals_due` (cria/atualiza renovações por vencimento)
+- [x] Task Beat `expire_policies`
+- [x] Notificação de renovações próximas
+- [x] Renovar gera nova apólice e atualiza status
 
 **Entrega:** renovações detectadas, notificadas e processáveis.
+
+> **Decisões de implementação da Sprint 20:** `Renewal` foi implementado em app
+> própria (`renewals`) para manter o ciclo de renovação separado do CRUD base de
+> apólices. A task Beat `renewals.check_upcoming_renewals` roda diariamente às
+> 06:00 e cria renovações pendentes para apólices ativas com vencimento em até
+> 90 dias, notificando apenas o owner da corretora nesta versão. A task
+> `renewals.expire_policies` roda diariamente às 00:30 e marca apólices ativas
+> já vencidas como expiradas. Templates, sidebar e widgets visuais ficam para a
+> camada de UI.
 
 ### Sprint 21 — IA para Resumos
 **Objetivo:** resumos assíncronos por IA.
