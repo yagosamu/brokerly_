@@ -1,0 +1,112 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Notificações · Brokerly{% endblock %}
+{% block page_title %}Notificações{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Notificações</li>
+{% endblock %}
+
+{% block page_actions %}
+<form method="post" action="{% url 'notifications:mark_all_read' %}" class="d-inline" id="mark-all-form">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-light-brand">
+        <i class="feather-check-square me-1"></i>Marcar todas como lidas
+    </button>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var form = document.getElementById('mark-all-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch(form.action, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: new FormData(form),
+        }).finally(function() { window.location.reload(); });
+    });
+})();
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Histórico completo</h5>
+        <p class="fs-12 text-muted mb-0 mt-1">Notificações enviadas para você nesta corretora.</p>
+    </div>
+    <div class="card-body p-0">
+        {% if notifications %}
+        <div class="list-group list-group-flush">
+            {% for n in notifications %}
+            <a href="{% if n.url %}{{ n.url }}{% else %}javascript:void(0);{% endif %}" class="list-group-item list-group-item-action py-3 {% if not n.is_read %}bg-soft-primary{% endif %}">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="badge
+                        {% if n.type == 'ai_summary' %}bg-soft-primary text-primary
+                        {% elif n.type == 'report' %}bg-soft-info text-info
+                        {% elif n.type == 'renewal' %}bg-soft-warning text-warning
+                        {% else %}bg-soft-success text-success{% endif %}
+                        d-inline-flex align-items-center justify-content-center" style="min-width: 36px; height: 36px; border-radius: 8px;">
+                        {% if n.type == 'ai_summary' %}<i class="feather-feather"></i>
+                        {% elif n.type == 'report' %}<i class="feather-file-text"></i>
+                        {% elif n.type == 'renewal' %}<i class="feather-clock"></i>
+                        {% else %}<i class="feather-bell"></i>{% endif %}
+                    </span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <div class="fw-bold text-dark">{{ n.title }}</div>
+                            <div class="fs-11 text-muted">{{ n.created_at|date:'d/m/Y H:i' }}</div>
+                        </div>
+                        {% if n.message %}
+                        <div class="fs-12 text-muted mt-1">{{ n.message }}</div>
+                        {% endif %}
+                        <div class="fs-11 text-muted mt-1">
+                            <span class="badge bg-gray-200 text-dark">{{ n.get_type_display }}</span>
+                            {% if not n.is_read %}
+                            <span class="badge bg-soft-warning text-warning ms-1">Não lida</span>
+                            {% endif %}
+                            {% if n.read_at %}
+                            <span class="ms-1">· lida em {{ n.read_at|date:'d/m/Y H:i' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-bell fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhuma notificação por aqui</h6>
+            <p class="fs-12 text-muted mb-0">Você será avisado por aqui quando resumos de IA, renovações e relatórios ficarem prontos.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

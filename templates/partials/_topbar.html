@@ -23,11 +23,25 @@
 
         <div class="header-right ms-auto">
             <div class="d-flex align-items-center gap-2">
-                <div class="nxl-h-item d-none d-sm-flex">
-                    <a href="javascript:void(0);" class="nxl-head-link me-0" title="Notificações">
+                <div class="nxl-h-item dropdown d-none d-sm-flex" id="notif-dropdown">
+                    <a href="javascript:void(0);" class="nxl-head-link me-0 dropdown-toggle" title="Notificações" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" id="notif-toggle">
                         <i class="feather-bell"></i>
-                        <span class="badge bg-danger nxl-h-badge">3</span>
+                        <span class="badge bg-danger nxl-h-badge d-none" id="notif-badge">0</span>
                     </a>
+                    <div class="dropdown-menu dropdown-menu-end" style="width: 340px; max-height: 480px; overflow-y: auto;">
+                        <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                            <span class="fw-bold fs-14">Notificações</span>
+                            <button type="button" class="btn btn-link btn-sm p-0 fs-11 text-primary" id="notif-mark-all">Marcar todas como lidas</button>
+                        </div>
+                        <div id="notif-list">
+                            <div class="text-center text-muted py-4 fs-12" id="notif-empty">Sem novas notificações.</div>
+                        </div>
+                        <div class="border-top">
+                            <a href="{% url 'notifications:list' %}" class="dropdown-item text-center fs-12 py-2 text-primary">
+                                Ver todas <i class="feather-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="nxl-h-item">
@@ -57,3 +71,126 @@
         </div>
     </div>
 </header>
+
+<form id="notif-csrf-form" style="display:none;">{% csrf_token %}</form>
+
+<script>
+(function() {
+    var toggleEl = document.getElementById('notif-toggle');
+    var badge = document.getElementById('notif-badge');
+    var listEl = document.getElementById('notif-list');
+    var emptyEl = document.getElementById('notif-empty');
+    var markAllBtn = document.getElementById('notif-mark-all');
+    var csrfForm = document.getElementById('notif-csrf-form');
+    if (!toggleEl || !badge || !listEl || !csrfForm) return;
+
+    var csrfToken = csrfForm.querySelector('[name=csrfmiddlewaretoken]').value;
+    var POLL_INTERVAL = 30000;
+    var URL_UNREAD = '{% url "notifications:unread_json" %}';
+    var URL_MARK_ALL = '{% url "notifications:mark_all_read" %}';
+
+    function typeIcon(type) {
+        switch (type) {
+            case 'ai_summary': return 'feather-feather';
+            case 'report': return 'feather-file-text';
+            case 'renewal': return 'feather-clock';
+            default: return 'feather-bell';
+        }
+    }
+    function typeColor(type) {
+        switch (type) {
+            case 'ai_summary': return 'primary';
+            case 'report': return 'info';
+            case 'renewal': return 'warning';
+            default: return 'success';
+        }
+    }
+    function relativeTime(iso) {
+        var diff = (Date.now() - new Date(iso).getTime()) / 1000;
+        if (diff < 60) return 'agora';
+        if (diff < 3600) return Math.floor(diff / 60) + ' min';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' h';
+        return Math.floor(diff / 86400) + ' d';
+    }
+
+    function renderItems(items) {
+        listEl.innerHTML = '';
+        if (!items || items.length === 0) {
+            var e = document.createElement('div');
+            e.className = 'text-center text-muted py-4 fs-12';
+            e.textContent = 'Sem novas notificações.';
+            listEl.appendChild(e);
+            return;
+        }
+        items.forEach(function(n) {
+            var a = document.createElement('a');
+            a.className = 'dropdown-item d-flex align-items-start gap-2 py-2 border-bottom';
+            a.href = 'javascript:void(0);';
+            a.setAttribute('data-notif-id', n.id);
+            a.setAttribute('data-notif-url', n.url || '');
+            a.innerHTML =
+                '<span class="badge bg-soft-' + typeColor(n.type) + ' text-' + typeColor(n.type) + '" style="min-width: 32px; text-align: center;">' +
+                '<i class="' + typeIcon(n.type) + '"></i></span>' +
+                '<div class="flex-grow-1" style="min-width: 0;">' +
+                '<div class="fs-12 fw-bold text-dark text-truncate">' + escapeHtml(n.title) + '</div>' +
+                (n.message ? '<div class="fs-11 text-muted text-truncate">' + escapeHtml(n.message) + '</div>' : '') +
+                '<div class="fs-11 text-muted mt-1">' + relativeTime(n.created_at) + ' · ' + escapeHtml(n.type_display) + '</div>' +
+                '</div>';
+            listEl.appendChild(a);
+        });
+    }
+
+    function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+
+    function refresh() {
+        fetch(URL_UNREAD, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data) return;
+                var count = data.count || 0;
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.toggle('d-none', count === 0);
+                renderItems(data.items || []);
+            })
+            .catch(function() { /* silent */ });
+    }
+
+    listEl.addEventListener('click', function(e) {
+        var item = e.target.closest('[data-notif-id]');
+        if (!item) return;
+        e.preventDefault();
+        var id = item.getAttribute('data-notif-id');
+        var url = item.getAttribute('data-notif-url');
+        var fd = new FormData(); fd.append('_', '1');
+        fetch('/notifications/' + id + '/read/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        }).finally(function() {
+            if (url) window.location.href = url;
+            else refresh();
+        });
+    });
+
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var fd = new FormData(); fd.append('_', '1');
+            fetch(URL_MARK_ALL, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd,
+            }).then(refresh);
+        });
+    }
+
+    refresh();
+    setInterval(refresh, POLL_INTERVAL);
+})();
+</script>
