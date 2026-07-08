@@ -3631,12 +3631,12 @@ flowchart LR
 
 ### Sprint 18 — CRM (Grid + Kanban)
 **Objetivo:** funil de vendas.
-- [ ] App `crm`: models `Pipeline`, `Stage`, `Deal`, `DealStageHistory`
-- [ ] CRUD de pipelines/etapas (nome, cor, ordem, won/lost)
-- [ ] Visualização **Kanban** com drag-and-drop (endpoint de mudança de etapa + CSRF)
-- [ ] Registro de `DealStageHistory` na mudança
-- [ ] Visualização **grid** com filtros
-- [ ] Vínculo com cliente/produtor/proposta
+- [x] App `crm`: models `Pipeline`, `Stage`, `Deal`, `DealStageHistory`
+- [x] CRUD de pipelines/etapas (nome, cor, ordem, won/lost)
+- [x] Visualização **Kanban** com drag-and-drop (endpoint de mudança de etapa + CSRF)
+- [x] Registro de `DealStageHistory` na mudança
+- [x] Visualização **grid** com filtros
+- [x] Vínculo com cliente/produtor/proposta
 
 **Entrega:** negociações em grid e Kanban com histórico de etapa.
 
