@@ -1,5 +1,10 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordResetForm,
+    UserCreationForm,
+)
+from django.template import loader
 
 from accounts.models import User
 
@@ -114,3 +119,38 @@ class MemberUpdateForm(forms.ModelForm):
                 'O administrador da corretora não pode ser desativado.'
             )
         return cleaned_data
+
+
+class AsyncPasswordResetForm(PasswordResetForm):
+    """PasswordResetForm que enfileira o envio via Celery."""
+
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        from notifications.tasks import send_password_reset_email
+
+        subject = loader.render_to_string(
+            subject_template_name,
+            context,
+        ).strip().replace('\n', ' ')
+        body = loader.render_to_string(email_template_name, context)
+        html_body = None
+        if html_email_template_name:
+            html_body = loader.render_to_string(
+                html_email_template_name,
+                context,
+            )
+
+        send_password_reset_email.delay(
+            subject=subject,
+            body=body,
+            from_email=from_email,
+            to=[to_email],
+            html_body=html_body,
+        )
