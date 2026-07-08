@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'commissions',
     'crm',
     'notifications',
+    'renewals',
 ]
 
 MIDDLEWARE = [
