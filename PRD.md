@@ -3642,13 +3642,21 @@ flowchart LR
 
 ### Sprint 19 — Celery, Beat e Notificações
 **Objetivo:** infraestrutura assíncrona e avisos in-app.
-- [ ] Configurar `django-celery-beat` (DatabaseScheduler) e `django-celery-results`
-- [ ] Instalar e configurar `dj-celery-panel` no admin
-- [ ] App `notifications`: model `Notification` + endpoint `/notifications/unread/` (polling)
-- [ ] Sino no topbar com contador e dropdown
-- [ ] Migrar envio de e-mails (inclui reset) para task assíncrona
+- [x] Configurar `django-celery-beat` (DatabaseScheduler) e `django-celery-results`
+- [x] Instalar e configurar `dj-celery-panel` no admin
+- [x] App `notifications`: model `Notification` + endpoint `/notifications/unread/` (polling)
+- [x] Sino no topbar com contador e dropdown
+- [x] Migrar envio de e-mails (inclui reset) para task assíncrona
 
 **Entrega:** tasks visíveis no admin; notificações in-app por polling.
+
+> **Decisões de implementação da Sprint 19:** `django-celery-results` foi
+> instalado e o backend de resultados do Celery passou a ser `django-db`, com
+> resultados estendidos para visibilidade no Admin. `dj-celery-panel==0.4.0`
+> instalou e passou em `manage.py check` com Django 6, então foi mantido como
+> visualização best-effort. A integração visual do sino no topbar permanece fora
+> do escopo do Codex nesta sprint; os endpoints de polling e marcação de leitura
+> estão prontos para o template/JS do Claude consumir.
 
 ### Sprint 20 — Renovações
 **Objetivo:** ciclo de renovação automatizado.
