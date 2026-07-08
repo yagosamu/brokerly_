@@ -24,6 +24,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_celery_beat',
+    'django_celery_results',
+    'dj_celery_panel',
     'widget_tweaks',
     'base',
     'tenants',
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
     'partners',
     'commissions',
     'crm',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -135,7 +138,9 @@ if not DEBUG:
     SECURE_REDIRECT_EXEMPT = [r'^health/$']
 
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_EXTENDED = True
+CELERY_CACHE_BACKEND = 'default'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
