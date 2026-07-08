@@ -1,0 +1,209 @@
+{% extends 'base_app.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Editar pipeline{% else %}Novo pipeline{% endif %} · Brokerly{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Editar pipeline · {{ object.name }}{% else %}Novo pipeline{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'crm:pipeline_list' %}">Pipelines</a></li>
+<li class="breadcrumb-item">{% if form.instance.pk %}Editar{% else %}Cadastrar{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:pipeline_list' %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stage-row {
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    .stage-row.is-deleted { opacity: 0.4; }
+    .stage-color-input { max-width: 60px; padding: 2px; height: 34px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ form.non_field_errors|first }}</div>
+    {% endif %}
+    {% if stage_formset.non_form_errors %}
+    <div class="alert alert-danger py-2 mb-3">{{ stage_formset.non_form_errors|first }}</div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-xl-8">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Pipeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fs-12 text-uppercase text-muted">Nome <span class="text-danger">*</span></label>
+                            {{ form.name|add_class:"form-control"|attr:"placeholder:Negociações, Renovações, Sinistros…" }}
+                            {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors|first }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                {{ form.is_default|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_default.id_for_label }}">Pipeline padrão</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-0">Etapas</h5>
+                        <p class="fs-12 text-muted mb-0 mt-1">A ordem determina a sequência do funil. Marque "ganho" ou "perdido" apenas nos estágios finais.</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light-brand" id="add-stage">
+                        <i class="feather-plus me-1"></i>Adicionar etapa
+                    </button>
+                </div>
+                <div class="card-body">
+                    {{ stage_formset.management_form }}
+                    <div id="stages-container">
+                        {% for stage_form in stage_formset %}
+                        <div class="stage-row" data-form-index="{{ forloop.counter0 }}">
+                            {% if stage_form.instance.pk %}{{ stage_form.id }}{% endif %}
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-1">
+                                    <label class="form-label fs-11 text-uppercase text-muted mb-1">Ordem</label>
+                                    {{ stage_form.order|add_class:"form-control form-control-sm text-center" }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fs-11 text-uppercase text-muted mb-1">Nome</label>
+                                    {{ stage_form.name|add_class:"form-control form-control-sm" }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fs-11 text-uppercase text-muted mb-1">Cor</label>
+                                    {{ stage_form.color|add_class:"form-control stage-color-input"|attr:"type:color" }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fs-11 text-uppercase text-muted mb-1 d-block">Ganho</label>
+                                    {{ stage_form.is_won|add_class:"form-check-input js-is-won" }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fs-11 text-uppercase text-muted mb-1 d-block">Perdido</label>
+                                    {{ stage_form.is_lost|add_class:"form-check-input js-is-lost" }}
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    {% if stage_formset.can_delete %}
+                                    <label class="fs-11 text-danger mb-0 d-block">Remover</label>
+                                    {{ stage_form.DELETE|add_class:"form-check-input js-delete" }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if stage_form.errors %}
+                            <div class="mt-1">
+                                {% for field, errors in stage_form.errors.items %}
+                                <div class="invalid-feedback d-block fs-11">{{ field }}: {{ errors|first }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-header"><h5 class="card-title">Dicas</h5></div>
+                <div class="card-body fs-12 text-muted">
+                    <p class="mb-2"><strong class="text-dark">Ganho</strong> e <strong class="text-dark">perdido</strong> são mutuamente exclusivos.</p>
+                    <p class="mb-2"><strong class="text-dark">Cor</strong> aparece nas colunas do kanban e nos badges do grid.</p>
+                    <p class="mb-0"><strong class="text-dark">Ordem</strong> determina a posição da coluna no kanban.</p>
+                </div>
+            </div>
+
+            <div class="card stretch stretch-full mb-4">
+                <div class="card-body d-flex justify-content-end gap-2">
+                    <a href="{% url 'crm:pipeline_list' %}" class="btn btn-light-brand">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.pk %}Salvar alterações{% else %}Cadastrar pipeline{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var container = document.getElementById('stages-container');
+    var addBtn = document.getElementById('add-stage');
+    var totalForms = document.getElementById('id_stages-TOTAL_FORMS');
+    if (!container || !addBtn || !totalForms) return;
+
+    var template = container.querySelector('.stage-row');
+    if (!template) return;
+
+    function reindex() {
+        var rows = container.querySelectorAll('.stage-row');
+        rows.forEach(function(row, index) {
+            row.setAttribute('data-form-index', index);
+            row.querySelectorAll('input, select, textarea, label').forEach(function(el) {
+                ['name', 'id', 'for'].forEach(function(attr) {
+                    var val = el.getAttribute(attr);
+                    if (val) {
+                        el.setAttribute(attr, val.replace(/stages-\d+-/g, 'stages-' + index + '-'));
+                    }
+                });
+            });
+        });
+        totalForms.value = rows.length;
+    }
+
+    addBtn.addEventListener('click', function() {
+        var newRow = template.cloneNode(true);
+        newRow.querySelectorAll('input, select, textarea').forEach(function(el) {
+            if (el.type === 'checkbox') el.checked = false;
+            else if (el.type === 'color') el.value = '#3454d1';
+            else if (!el.name || !el.name.endsWith('-id')) el.value = '';
+            else el.value = '';
+        });
+        newRow.classList.remove('is-deleted');
+        container.appendChild(newRow);
+        reindex();
+    });
+
+    container.addEventListener('change', function(e) {
+        // Won XOR Lost — uncheck the other automatically.
+        if (e.target.classList.contains('js-is-won') && e.target.checked) {
+            var lost = e.target.closest('.stage-row').querySelector('.js-is-lost');
+            if (lost) lost.checked = false;
+        }
+        if (e.target.classList.contains('js-is-lost') && e.target.checked) {
+            var won = e.target.closest('.stage-row').querySelector('.js-is-won');
+            if (won) won.checked = false;
+        }
+        // DELETE toggles opacity.
+        if (e.target.classList.contains('js-delete')) {
+            e.target.closest('.stage-row').classList.toggle('is-deleted', e.target.checked);
+        }
+    });
+
+    container.querySelectorAll('.js-delete:checked').forEach(function(cb) {
+        cb.closest('.stage-row').classList.add('is-deleted');
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Negociações · Brokerly{% endblock %}
+{% block page_title %}Negociações{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Comercial</li>
+<li class="breadcrumb-item">CRM</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{% url 'crm:kanban' %}" class="btn btn-sm btn-light-brand"><i class="feather-layout me-1"></i>Kanban</a>
+    <a href="{% url 'crm:pipeline_list' %}" class="btn btn-sm btn-light-brand"><i class="feather-settings me-1"></i>Pipelines</a>
+    <a href="{% url 'crm:deal_create' %}" class="btn btn-sm btn-primary"><i class="feather-plus me-1"></i>Nova negociação</a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card { padding: 16px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); background: var(--brokerly-surface); }
+    .stat-card.open { border-left: 4px solid var(--brokerly-info); }
+    .stat-card.won { border-left: 4px solid var(--brokerly-success); }
+    .stat-card.lost { border-left: 4px solid var(--brokerly-danger); }
+    .stat-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--brokerly-text-strong); margin-top: 2px; }
+    .stat-count { font-size: 12px; color: var(--brokerly-text-muted); margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card open">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Em andamento</div>
+                    <div class="stat-value text-info">R$ {{ total_open_amount|default:0|floatformat:2 }}</div>
+                    <div class="stat-count">{{ total_open_count|default:0 }} negociação{{ total_open_count|default:0|pluralize:'ões' }}</div>
+                </div>
+                <i class="feather-activity fs-2 text-info"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card won">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Ganhas</div>
+                    <div class="stat-value text-success">R$ {{ total_won_amount|default:0|floatformat:2 }}</div>
+                    <div class="stat-count">{{ total_won_count|default:0 }} fechada{{ total_won_count|default:0|pluralize:'s' }}</div>
+                </div>
+                <i class="feather-check-square fs-2 text-success"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card lost">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="stat-label">Perdidas</div>
+                    <div class="stat-value text-danger">R$ {{ total_lost_amount|default:0|floatformat:2 }}</div>
+                    <div class="stat-count">{{ total_lost_count|default:0 }} descartada{{ total_lost_count|default:0|pluralize:'s' }}</div>
+                </div>
+                <i class="feather-x fs-2 text-danger"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card stretch stretch-full">
+    <div class="card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="card-title mb-0">Negociações</h5>
+                <p class="fs-12 text-muted mb-0 mt-1">{{ total }} negociação{{ total|pluralize:'ões' }} no funil.</p>
+            </div>
+        </div>
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Buscar</label>
+                <div class="position-relative">
+                    <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm ps-5" placeholder="Título ou cliente">
+                    <i class="feather-search position-absolute top-50 translate-middle-y ms-3 text-muted"></i>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="open" {% if selected_status == 'open' %}selected{% endif %}>Aberta</option>
+                    <option value="won" {% if selected_status == 'won' %}selected{% endif %}>Ganha</option>
+                    <option value="lost" {% if selected_status == 'lost' %}selected{% endif %}>Perdida</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Pipeline</label>
+                <select name="pipeline" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for pl in search_form.pipeline.field.queryset %}
+                    <option value="{{ pl.id }}" {% if selected_pipeline == pl.id|stringformat:"s" %}selected{% endif %}>{{ pl.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Etapa</label>
+                <select name="stage" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for st in search_form.stage.field.queryset %}
+                    <option value="{{ st.id }}" {% if selected_stage == st.id|stringformat:"s" %}selected{% endif %}>{{ st.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fs-11 text-uppercase text-muted mb-1">Produtor</label>
+                <select name="producer" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    {% for pr in search_form.producer.field.queryset %}
+                    <option value="{{ pr.id }}" {% if selected_producer == pr.id|stringformat:"s" %}selected{% endif %}>{{ pr.name|truncatechars:20 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-sm btn-light-brand w-100"><i class="feather-filter"></i></button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        {% if deals %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="fs-11 text-uppercase text-muted">Negociação</th>
+                        <th class="fs-11 text-uppercase text-muted">Cliente</th>
+                        <th class="fs-11 text-uppercase text-muted">Produtor</th>
+                        <th class="fs-11 text-uppercase text-muted">Etapa</th>
+                        <th class="fs-11 text-uppercase text-muted">Fechamento</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Valor estimado</th>
+                        <th class="fs-11 text-uppercase text-muted">Status</th>
+                        <th class="fs-11 text-uppercase text-muted text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deal in deals %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'crm:deal_detail' deal.id %}" class="fw-bold text-dark text-decoration-none">{{ deal.title }}</a>
+                            <div class="fs-11 text-muted">{{ deal.pipeline.name }}</div>
+                        </td>
+                        <td class="fs-12">
+                            {% if deal.client %}
+                            <a href="{% url 'clients:client_detail' deal.client.id %}" class="text-decoration-none text-dark">{{ deal.client.name|truncatechars:24 }}</a>
+                            {% else %}
+                            <span class="text-muted">Lead</span>
+                            {% endif %}
+                        </td>
+                        <td class="fs-12 text-muted">{{ deal.producer.name|truncatechars:22 }}</td>
+                        <td>
+                            <span class="badge" style="background: {{ deal.stage.color }}12; color: {{ deal.stage.color }};">{{ deal.stage.name }}</span>
+                        </td>
+                        <td class="fs-12">{% if deal.expected_close_date %}{{ deal.expected_close_date|date:'d/m/Y' }}{% else %}—{% endif %}</td>
+                        <td class="text-end fw-bold">R$ {{ deal.estimated_value|floatformat:2 }}</td>
+                        <td>
+                            {% if deal.status == 'open' %}
+                            <span class="badge bg-soft-info text-info">{{ deal.get_status_display }}</span>
+                            {% elif deal.status == 'won' %}
+                            <span class="badge bg-soft-success text-success">{{ deal.get_status_display }}</span>
+                            {% elif deal.status == 'lost' %}
+                            <span class="badge bg-soft-danger text-danger">{{ deal.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'crm:deal_detail' deal.id %}" class="btn btn-sm btn-light-brand" title="Ver"><i class="feather-eye"></i></a>
+                            <a href="{% url 'crm:deal_update' deal.id %}" class="btn btn-sm btn-light-brand" title="Editar"><i class="feather-edit"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center p-5">
+            <i class="feather-layout fs-1 text-gray-500 d-block mb-2"></i>
+            <h6 class="mb-1">Nenhuma negociação encontrada</h6>
+            <p class="fs-12 text-muted mb-3">
+                {% if q or selected_status or selected_pipeline or selected_stage or selected_producer %}
+                Ajuste os filtros para ver outros resultados.
+                {% else %}
+                Comece registrando sua primeira oportunidade.
+                {% endif %}
+            </p>
+            <a href="{% url 'crm:deal_create' %}" class="btn btn-sm btn-primary"><i class="feather-plus me-1"></i>Nova negociação</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="fs-12 text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number|default:1 }}"><i class="feather-arrow-left"></i></a>
+                </li>
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}"><i class="feather-arrow-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

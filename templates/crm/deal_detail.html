@@ -1,0 +1,223 @@
+{% extends 'base_app.html' %}
+
+{% block title %}{{ deal.title }} · Brokerly{% endblock %}
+{% block page_title %}{{ deal.title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'crm:deal_list' %}">Negociações</a></li>
+<li class="breadcrumb-item">{{ deal.title|truncatechars:40 }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{% url 'crm:deal_list' %}" class="btn btn-sm btn-light-brand"><i class="feather-arrow-left me-1"></i>Voltar</a>
+    <a href="{% url 'crm:kanban' %}?pipeline={{ deal.pipeline.id }}" class="btn btn-sm btn-light-brand"><i class="feather-layout me-1"></i>Kanban</a>
+    <a href="{% url 'crm:deal_update' deal.id %}" class="btn btn-sm btn-primary"><i class="feather-edit me-1"></i>Editar</a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .deal-hero { display: flex; align-items: center; gap: 16px; }
+    .deal-icon {
+        width: 56px; height: 56px;
+        border-radius: var(--brokerly-radius-md);
+        background: rgba(52, 84, 209, 0.12);
+        color: var(--brokerly-primary);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 22px;
+    }
+    .info-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--brokerly-border); }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; letter-spacing: 0.4px; }
+    .info-row-value { font-size: 14px; color: var(--brokerly-text-strong); }
+    .kpi-card { padding: 16px; border: 1px solid var(--brokerly-border); border-radius: var(--brokerly-radius-md); }
+    .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--brokerly-text-muted); font-weight: 600; }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--brokerly-text-strong); }
+    .timeline { position: relative; padding-left: 24px; }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px; top: 0; bottom: 0;
+        width: 2px;
+        background: var(--brokerly-border);
+    }
+    .timeline-item { position: relative; padding-bottom: 20px; }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -20px; top: 6px;
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: var(--brokerly-primary);
+        border: 3px solid var(--brokerly-surface);
+    }
+    .timeline-item.won::before { background: var(--brokerly-success); }
+    .timeline-item.lost::before { background: var(--brokerly-danger); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="deal-hero">
+                <span class="deal-icon"><i class="feather-layout"></i></span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="mb-0">{{ deal.title }}</h4>
+                        <span class="badge" style="background: {{ deal.stage.color }}12; color: {{ deal.stage.color }};">{{ deal.stage.name }}</span>
+                        {% if deal.status == 'open' %}
+                        <span class="badge bg-soft-info text-info">{{ deal.get_status_display }}</span>
+                        {% elif deal.status == 'won' %}
+                        <span class="badge bg-soft-success text-success">{{ deal.get_status_display }}</span>
+                        {% elif deal.status == 'lost' %}
+                        <span class="badge bg-soft-danger text-danger">{{ deal.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="fs-12 text-muted mt-1">
+                        {{ deal.pipeline.name }}
+                        {% if deal.client %} · <a href="{% url 'clients:client_detail' deal.client.id %}" class="text-decoration-none">{{ deal.client.name }}</a>{% else %} · <em>Lead</em>{% endif %}
+                        · Produtor <a href="{% url 'partners:producer_detail' deal.producer.id %}" class="text-decoration-none">{{ deal.producer.name }}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-4 fs-12 text-muted">
+                {% if deal.created_by %}
+                <div>
+                    <div class="text-uppercase fs-11">Criada por</div>
+                    <div class="text-dark fw-semibold">{{ deal.created_by.get_full_name|default:deal.created_by.email }}</div>
+                </div>
+                {% endif %}
+                <div>
+                    <div class="text-uppercase fs-11">Criada em</div>
+                    <div class="text-dark fw-semibold">{{ deal.created_at|date:'d/m/Y' }}</div>
+                </div>
+                {% if deal.expected_close_date %}
+                <div>
+                    <div class="text-uppercase fs-11">Fechamento previsto</div>
+                    <div class="text-dark fw-semibold">{{ deal.expected_close_date|date:'d/m/Y' }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4"><div class="kpi-card"><div class="kpi-label">Valor estimado</div><div class="kpi-value">R$ {{ deal.estimated_value|floatformat:2 }}</div></div></div>
+    <div class="col-md-4"><div class="kpi-card"><div class="kpi-label">Etapa atual</div><div class="kpi-value fs-5" style="color: {{ deal.stage.color }};">{{ deal.stage.name }}</div></div></div>
+    <div class="col-md-4"><div class="kpi-card"><div class="kpi-label">Transições</div><div class="kpi-value">{{ history|length }}</div></div></div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Detalhes</h5></div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-row-label">Pipeline</span>
+                    <span class="info-row-value">{{ deal.pipeline.name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Cliente</span>
+                    <span class="info-row-value">
+                        {% if deal.client %}<a href="{% url 'clients:client_detail' deal.client.id %}" class="text-decoration-none">{{ deal.client.name }}</a>{% else %}<em class="text-muted">Ainda é um lead</em>{% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Produtor</span>
+                    <span class="info-row-value">
+                        <a href="{% url 'partners:producer_detail' deal.producer.id %}" class="text-decoration-none">{{ deal.producer.name }}</a>
+                    </span>
+                </div>
+                {% if deal.agent %}
+                <div class="info-row">
+                    <span class="info-row-label">Agente</span>
+                    <span class="info-row-value"><a href="{% url 'partners:agent_detail' deal.agent.id %}" class="text-decoration-none">{{ deal.agent.name }}</a></span>
+                </div>
+                {% endif %}
+                {% if deal.insurer or deal.line_of_business %}
+                <div class="info-row">
+                    <span class="info-row-label">Seguradora · Ramo</span>
+                    <span class="info-row-value">
+                        {{ deal.insurer.name|default:'—' }}{% if deal.line_of_business %} · {{ deal.line_of_business.name }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% if deal.proposal %}
+                <div class="info-row">
+                    <span class="info-row-label">Proposta vinculada</span>
+                    <span class="info-row-value"><a href="{% url 'insurance:proposal_detail' deal.proposal.id %}" class="text-decoration-none">#{{ deal.proposal.number }}</a></span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if deal.description %}
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header"><h5 class="card-title">Descrição</h5></div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ deal.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="feather-clock me-1"></i>Histórico de etapas</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                <div class="timeline">
+                    {% for h in history %}
+                    <div class="timeline-item {% if h.to_stage.is_won %}won{% elif h.to_stage.is_lost %}lost{% endif %}">
+                        <div class="fs-12">
+                            {% if h.from_stage %}
+                            <span class="text-muted">{{ h.from_stage.name }}</span>
+                            <i class="feather-arrow-right mx-1 text-muted"></i>
+                            {% endif %}
+                            <span class="fw-bold" style="color: {{ h.to_stage.color }};">{{ h.to_stage.name }}</span>
+                        </div>
+                        <div class="fs-11 text-muted mt-1">
+                            {{ h.changed_at|date:'d/m/Y H:i' }}
+                            {% if h.changed_by %}· {{ h.changed_by.get_full_name|default:h.changed_by.email }}{% endif %}
+                        </div>
+                        {% if h.note %}
+                        <div class="fs-12 text-muted mt-1"><em>{{ h.note }}</em></div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="fs-12 text-muted mb-0">Nenhuma transição registrada ainda.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="card-title mb-0"><i class="feather-feather me-1"></i>Resumo com IA</h5>
+                {% if deal.ai_summary_status == 'done' %}
+                <span class="badge bg-soft-success text-success">{{ deal.get_ai_summary_status_display }}</span>
+                {% else %}
+                <span class="badge bg-gray-200 text-dark">{{ deal.get_ai_summary_status_display }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if deal.ai_summary %}
+                <p class="mb-0" style="white-space: pre-line;">{{ deal.ai_summary }}</p>
+                {% else %}
+                <p class="fs-12 text-muted mb-3">Um agente de IA resumirá o histórico da negociação.</p>
+                <button type="button" class="btn btn-light-brand w-100" disabled>
+                    <i class="feather-feather me-1"></i>Resumir com IA <span class="badge bg-gray-200 text-dark ms-2">em breve</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,306 @@
+{% extends 'base_app.html' %}
+{% load crm_extras %}
+
+{% block title %}Kanban · Brokerly{% endblock %}
+{% block page_title %}Kanban{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item">Comercial</li>
+<li class="breadcrumb-item"><a href="{% url 'crm:deal_list' %}">CRM</a></li>
+<li class="breadcrumb-item">Kanban</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="d-flex align-items-center gap-2">
+    <div class="dropdown">
+        <button class="btn btn-sm btn-light-brand dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="feather-layout me-1"></i>{{ active_pipeline.name|default:'Selecione um pipeline' }}
+        </button>
+        <ul class="dropdown-menu">
+            {% for pl in pipelines %}
+            <li>
+                <a class="dropdown-item {% if active_pipeline.id == pl.id %}active{% endif %}" href="?pipeline={{ pl.id }}">
+                    {{ pl.name }}
+                    {% if pl.is_default %}<span class="badge bg-soft-success text-success ms-1">padrão</span>{% endif %}
+                </a>
+            </li>
+            {% empty %}
+            <li><span class="dropdown-item text-muted">Nenhum pipeline cadastrado</span></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <a href="{% url 'crm:deal_list' %}" class="btn btn-sm btn-light-brand"><i class="feather-align-left me-1"></i>Grid</a>
+    <a href="{% url 'crm:deal_create' %}" class="btn btn-sm btn-primary"><i class="feather-plus me-1"></i>Nova negociação</a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        min-height: 480px;
+    }
+    .kanban-column {
+        flex: 0 0 300px;
+        background: var(--brokerly-surface-muted);
+        border-radius: var(--brokerly-radius-md);
+        display: flex;
+        flex-direction: column;
+        max-height: 78vh;
+    }
+    .kanban-column.drop-active {
+        outline: 2px dashed var(--brokerly-primary);
+        outline-offset: -6px;
+    }
+    .kanban-column-header {
+        padding: 12px 14px;
+        border-bottom: 2px solid;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .kanban-column-header .col-count {
+        background: rgba(255, 255, 255, 0.6);
+        color: var(--brokerly-text-strong);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+    }
+    .kanban-column-body {
+        padding: 10px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 60px;
+    }
+    .kanban-card {
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-sm);
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        cursor: grab;
+        transition: box-shadow 0.15s ease;
+    }
+    .kanban-card:hover { box-shadow: var(--brokerly-shadow-sm); }
+    .kanban-card.is-dragging { opacity: 0.4; cursor: grabbing; }
+    .kanban-card-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--brokerly-text-strong);
+        text-decoration: none;
+        display: block;
+    }
+    .kanban-card-meta {
+        font-size: 11px;
+        color: var(--brokerly-text-muted);
+        margin-top: 4px;
+    }
+    .kanban-card-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--brokerly-text-strong);
+        margin-top: 6px;
+    }
+    .kanban-empty {
+        color: var(--brokerly-text-muted);
+        font-size: 12px;
+        text-align: center;
+        padding: 12px 8px;
+        font-style: italic;
+    }
+    .kanban-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--brokerly-text-strong);
+        color: white;
+        padding: 10px 16px;
+        border-radius: var(--brokerly-radius-sm);
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .kanban-toast.show { opacity: 1; transform: translateY(0); }
+    .kanban-toast.error { background: var(--brokerly-danger); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not active_pipeline %}
+<div class="card stretch stretch-full">
+    <div class="card-body text-center p-5">
+        <i class="feather-layout fs-1 text-gray-500 d-block mb-2"></i>
+        <h6 class="mb-1">Nenhum pipeline cadastrado</h6>
+        <p class="fs-12 text-muted mb-3">Crie um pipeline com etapas para começar a usar o kanban.</p>
+        <a href="{% url 'crm:pipeline_create' %}" class="btn btn-sm btn-primary"><i class="feather-plus me-1"></i>Novo pipeline</a>
+    </div>
+</div>
+{% else %}
+<form id="kanban-csrf-form" style="display:none;">{% csrf_token %}</form>
+
+<div class="kanban-board" id="kanban-board" data-move-url-template="{% url 'crm:deal_move_stage' 0 %}">
+    {% for stage in stages %}
+    {% with column_deals=deals_by_stage|dict_get:stage.id %}
+    <div class="kanban-column" data-stage-id="{{ stage.id }}">
+        <div class="kanban-column-header" style="border-bottom-color: {{ stage.color }}; color: {{ stage.color }};">
+            <span>
+                {% if stage.is_won %}<i class="feather-check me-1"></i>{% elif stage.is_lost %}<i class="feather-x me-1"></i>{% endif %}
+                {{ stage.name }}
+            </span>
+            <span class="col-count" data-count-for="{{ stage.id }}">{{ column_deals|length }}</span>
+        </div>
+        <div class="kanban-column-body" data-drop-target="{{ stage.id }}">
+            {% for deal in column_deals %}
+            <div class="kanban-card" draggable="true" data-deal-id="{{ deal.id }}">
+                <a href="{% url 'crm:deal_detail' deal.id %}" class="kanban-card-title">{{ deal.title }}</a>
+                <div class="kanban-card-meta">
+                    {% if deal.client %}<i class="feather-user me-1"></i>{{ deal.client.name|truncatechars:24 }}{% else %}<em>Lead</em>{% endif %}
+                </div>
+                <div class="kanban-card-meta">
+                    <i class="feather-at-sign me-1"></i>{{ deal.producer.name|truncatechars:22 }}
+                </div>
+                {% if deal.estimated_value %}
+                <div class="kanban-card-value">R$ {{ deal.estimated_value|floatformat:2 }}</div>
+                {% endif %}
+                {% if deal.expected_close_date %}
+                <div class="kanban-card-meta"><i class="feather-clock me-1"></i>{{ deal.expected_close_date|date:'d/m/Y' }}</div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="kanban-empty">Nenhuma negociação nesta etapa.</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+</div>
+
+<div id="kanban-toast" class="kanban-toast"></div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if active_pipeline %}
+<script>
+(function() {
+    var board = document.getElementById('kanban-board');
+    var csrfForm = document.getElementById('kanban-csrf-form');
+    var toast = document.getElementById('kanban-toast');
+    if (!board || !csrfForm) return;
+
+    var csrfToken = csrfForm.querySelector('[name=csrfmiddlewaretoken]').value;
+    var urlTemplate = board.getAttribute('data-move-url-template');
+    var draggingCard = null;
+
+    function showToast(message, isError) {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.toggle('error', !!isError);
+        toast.classList.add('show');
+        setTimeout(function() { toast.classList.remove('show'); }, 2200);
+    }
+
+    function updateColumnCount(stageId) {
+        var col = board.querySelector('.kanban-column[data-stage-id="' + stageId + '"]');
+        if (!col) return;
+        var count = col.querySelectorAll('.kanban-card').length;
+        var badge = col.querySelector('[data-count-for="' + stageId + '"]');
+        if (badge) badge.textContent = count;
+        var body = col.querySelector('.kanban-column-body');
+        if (!body) return;
+        var empty = body.querySelector('.kanban-empty');
+        if (count === 0 && !empty) {
+            var e = document.createElement('div');
+            e.className = 'kanban-empty';
+            e.textContent = 'Nenhuma negociação nesta etapa.';
+            body.appendChild(e);
+        } else if (count > 0 && empty) {
+            empty.remove();
+        }
+    }
+
+    board.addEventListener('dragstart', function(e) {
+        var card = e.target.closest('.kanban-card');
+        if (!card) return;
+        draggingCard = card;
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', card.getAttribute('data-deal-id')); } catch (_) {}
+    });
+
+    board.addEventListener('dragend', function(e) {
+        if (draggingCard) draggingCard.classList.remove('is-dragging');
+        draggingCard = null;
+        board.querySelectorAll('.kanban-column.drop-active').forEach(function(c) { c.classList.remove('drop-active'); });
+    });
+
+    board.addEventListener('dragover', function(e) {
+        var target = e.target.closest('[data-drop-target]');
+        if (!target) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        var col = target.closest('.kanban-column');
+        board.querySelectorAll('.kanban-column.drop-active').forEach(function(c) { if (c !== col) c.classList.remove('drop-active'); });
+        if (col) col.classList.add('drop-active');
+    });
+
+    board.addEventListener('dragleave', function(e) {
+        var col = e.target.closest('.kanban-column');
+        if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop-active');
+    });
+
+    board.addEventListener('drop', function(e) {
+        var target = e.target.closest('[data-drop-target]');
+        if (!target || !draggingCard) return;
+        e.preventDefault();
+        var newStageId = target.getAttribute('data-drop-target');
+        var dealId = draggingCard.getAttribute('data-deal-id');
+        var originColumn = draggingCard.closest('.kanban-column');
+        var originStageId = originColumn ? originColumn.getAttribute('data-stage-id') : null;
+        if (originStageId === newStageId) return;
+
+        // Optimistically move the DOM element.
+        target.appendChild(draggingCard);
+        updateColumnCount(originStageId);
+        updateColumnCount(newStageId);
+        board.querySelectorAll('.kanban-column.drop-active').forEach(function(c) { c.classList.remove('drop-active'); });
+
+        var url = urlTemplate.replace(/0(?=\/[^/]*$)/, dealId);
+        var formData = new FormData();
+        formData.append('target_stage_id', newStageId);
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData,
+            credentials: 'same-origin',
+        }).then(function(r) {
+            if (!r.ok) return r.json().then(function(j) { throw new Error(j.error || 'Falha na movimentação.'); });
+            return r.json();
+        }).then(function(j) {
+            showToast('Negociação movida.', false);
+        }).catch(function(err) {
+            // Rollback: put card back.
+            if (originColumn) {
+                var origBody = originColumn.querySelector('.kanban-column-body');
+                if (origBody) origBody.appendChild(draggingCard);
+                updateColumnCount(newStageId);
+                updateColumnCount(originStageId);
+            }
+            showToast(err.message || 'Erro ao mover.', true);
+        });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}
