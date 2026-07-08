@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'claims',
     'partners',
     'commissions',
+    'crm',
 ]
 
 MIDDLEWARE = [
