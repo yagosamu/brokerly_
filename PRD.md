@@ -3679,12 +3679,12 @@ flowchart LR
 
 ### Sprint 21 — IA para Resumos
 **Objetivo:** resumos assíncronos por IA.
-- [ ] App `ai_agents`: `tools.py` com `build_tenant_tools(brokerage)`
-- [ ] Summary Agent (LangGraph `StateGraph`): load → fetch → prompt → generate → persist
-- [ ] Tasks `generate_*_summary` para cliente/apólice/sinistro/proposta/negociação
-- [ ] Campos `ai_summary`/`ai_summary_status` e fluxo de UI (loading + aviso)
-- [ ] Notificação ao concluir + exibição do resumo na entidade
-- [ ] Fixar versões: `langchain>=1.0`, `langgraph>=1.0`, `openai>=2.0`
+- [x] App `ai_agents`: `tools.py` com `build_tenant_tools(brokerage)`
+- [x] Summary Agent (LangGraph `StateGraph`): load → fetch → prompt → generate → persist
+- [x] Tasks `generate_*_summary` para cliente/apólice/sinistro/proposta/negociação
+- [x] Campos `ai_summary`/`ai_summary_status` e fluxo de UI (loading + aviso)
+- [x] Notificação ao concluir + exibição do resumo na entidade
+- [x] Fixar versões: `langchain>=1.0`, `langgraph>=1.0`, `openai>=2.0`
 
 **Entrega:** "Resumir com IA" funcionando para todas as entidades.
 
