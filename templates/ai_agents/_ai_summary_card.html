@@ -1,0 +1,62 @@
+{% comment %}
+Partial reutilizável do card "Resumo com IA".
+
+Contexto obrigatório:
+- entity            (objeto com ai_summary/ai_summary_status/ai_summary_updated_at)
+- entity_type       ('client' | 'policy' | 'proposal' | 'claim' | 'deal')
+- entity_id         (int)
+- can_trigger_ai    (bool)
+
+Uso:
+    {% include 'ai_agents/_ai_summary_card.html' with entity=client entity_type='client' entity_id=client.id can_trigger_ai=can_trigger_ai %}
+{% endcomment %}
+
+<div class="card stretch stretch-full mb-4" id="ai-summary-card-{{ entity_type }}-{{ entity_id }}" data-ai-entity="{{ entity_type }}" data-ai-id="{{ entity_id }}">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0"><i class="feather-feather me-1"></i>Resumo com IA</h5>
+        <span class="ai-status-badge">
+            {% if entity.ai_summary_status == 'done' %}
+            <span class="badge bg-soft-success text-success"><i class="feather-check me-1"></i>{{ entity.get_ai_summary_status_display }}</span>
+            {% elif entity.ai_summary_status == 'processing' %}
+            <span class="badge bg-soft-warning text-warning"><span class="spinner-border spinner-border-sm me-1" role="status"></span>{{ entity.get_ai_summary_status_display }}</span>
+            {% elif entity.ai_summary_status == 'error' %}
+            <span class="badge bg-soft-danger text-danger"><i class="feather-alert-circle me-1"></i>{{ entity.get_ai_summary_status_display }}</span>
+            {% else %}
+            <span class="badge bg-gray-200 text-dark">{{ entity.get_ai_summary_status_display }}</span>
+            {% endif %}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="ai-summary-content" data-summary-container>
+            {% if entity.ai_summary and entity.ai_summary_status == 'done' %}
+            <div class="ai-summary-markdown fs-13" data-summary-markdown>{{ entity.ai_summary }}</div>
+            {% if entity.ai_summary_updated_at %}
+            <small class="fs-11 text-muted d-block mt-2">Gerado em {{ entity.ai_summary_updated_at|date:'d/m/Y H:i' }}</small>
+            {% endif %}
+            {% elif entity.ai_summary_status == 'error' %}
+            <div class="alert alert-danger py-2 fs-12 mb-0"><i class="feather-alert-circle me-1"></i>{{ entity.ai_summary|default:'Erro ao gerar resumo.' }}</div>
+            {% elif entity.ai_summary_status == 'processing' %}
+            <div class="text-center py-3">
+                <div class="spinner-border text-warning" role="status"></div>
+                <p class="fs-12 text-muted mb-0 mt-2">A IA está buscando dados no seu tenant e gerando o resumo. Isso leva alguns segundos.</p>
+            </div>
+            {% else %}
+            <p class="fs-12 text-muted mb-0">Nenhum resumo gerado ainda.</p>
+            {% endif %}
+        </div>
+
+        {% if request.user.role == 'owner' or request.user.role == 'manager' or request.user.role == 'broker' or request.user.role == 'agent' %}
+        <button type="button"
+                class="btn btn-light-brand w-100 mt-3 ai-trigger-btn"
+                data-ai-trigger
+                {% if entity.ai_summary_status == 'processing' %}disabled{% endif %}>
+            <i class="feather-feather me-1"></i>
+            {% if entity.ai_summary %}Regenerar com IA{% else %}Resumir com IA{% endif %}
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+{% if not ai_summary_js_loaded %}
+{% include 'ai_agents/_ai_summary_js.html' %}
+{% endif %}

@@ -1,0 +1,166 @@
+{% comment %}Controlador global de cards de resumo IA. Idempotente — só instala listeners uma vez por página.{% endcomment %}
+<form id="ai-summary-csrf-form" style="display:none;">{% csrf_token %}</form>
+<script>
+(function() {
+    if (window.__brokerlyAISummaryInstalled) return;
+    window.__brokerlyAISummaryInstalled = true;
+
+    var csrfForm = document.getElementById('ai-summary-csrf-form');
+    var csrfToken = csrfForm ? csrfForm.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+    function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+
+    // Tiny markdown → HTML parser: headings, bold, italic, links, lists, code, hr, paragraphs.
+    function md(input) {
+        var text = String(input || '');
+        // Normalize newlines.
+        text = text.replace(/\r\n?/g, '\n');
+        // Escape everything then reintroduce markdown tokens.
+        text = esc(text);
+        // Code blocks ``` ```
+        text = text.replace(/```([\s\S]*?)```/g, function(_, code) {
+            return '<pre class="bg-light p-2 rounded fs-12"><code>' + code.trim() + '</code></pre>';
+        });
+        // Headings — only match at line-start.
+        text = text.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
+        text = text.replace(/^#####\s+(.+)$/gm, '<h6>$1</h6>');
+        text = text.replace(/^####\s+(.+)$/gm, '<h6>$1</h6>');
+        text = text.replace(/^###\s+(.+)$/gm, '<h6 class="mt-3">$1</h6>');
+        text = text.replace(/^##\s+(.+)$/gm, '<h5 class="mt-3">$1</h5>');
+        text = text.replace(/^#\s+(.+)$/gm, '<h4 class="mt-3">$1</h4>');
+        // Horizontal rule.
+        text = text.replace(/^---+$/gm, '<hr>');
+        // Bold + italic (nested-safe order).
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+        text = text.replace(/`([^`\n]+)`/g, '<code class="bg-light px-1 rounded">$1</code>');
+        // Links [text](url).
+        text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" class="text-primary" target="_blank" rel="noopener">$1</a>');
+        // Unordered lists — group consecutive lines starting with -/* into a <ul>.
+        text = text.replace(/(^(?:[-*] .+\n?)+)/gm, function(block) {
+            var items = block.trim().split(/\n/).map(function(l) {
+                return '<li>' + l.replace(/^[-*]\s+/, '') + '</li>';
+            });
+            return '<ul class="mb-2">' + items.join('') + '</ul>';
+        });
+        // Ordered lists.
+        text = text.replace(/(^(?:\d+\. .+\n?)+)/gm, function(block) {
+            var items = block.trim().split(/\n/).map(function(l) {
+                return '<li>' + l.replace(/^\d+\.\s+/, '') + '</li>';
+            });
+            return '<ol class="mb-2">' + items.join('') + '</ol>';
+        });
+        // Paragraphs: split double-newlines.
+        text = text.split(/\n{2,}/).map(function(chunk) {
+            var trimmed = chunk.trim();
+            if (!trimmed) return '';
+            if (/^<(h[1-6]|ul|ol|pre|hr|blockquote)/.test(trimmed)) return trimmed;
+            return '<p class="mb-2">' + trimmed.replace(/\n/g, '<br>') + '</p>';
+        }).join('\n');
+        return text;
+    }
+
+    function badge(status) {
+        if (status === 'done') {
+            return '<span class="badge bg-soft-success text-success"><i class="feather-check me-1"></i>Concluído</span>';
+        }
+        if (status === 'processing') {
+            return '<span class="badge bg-soft-warning text-warning"><span class="spinner-border spinner-border-sm me-1" role="status"></span>Processando</span>';
+        }
+        if (status === 'error') {
+            return '<span class="badge bg-soft-danger text-danger"><i class="feather-alert-circle me-1"></i>Erro</span>';
+        }
+        return '<span class="badge bg-gray-200 text-dark">Pendente</span>';
+    }
+
+    function renderContent(card, data) {
+        var container = card.querySelector('[data-summary-container]');
+        var status = data.status;
+        if (status === 'done') {
+            var updated = data.updated_at ? new Date(data.updated_at).toLocaleString('pt-BR') : '';
+            container.innerHTML =
+                '<div class="ai-summary-markdown fs-13">' + md(data.markdown || '') + '</div>' +
+                (updated ? '<small class="fs-11 text-muted d-block mt-2">Gerado em ' + esc(updated) + '</small>' : '');
+        } else if (status === 'error') {
+            container.innerHTML =
+                '<div class="alert alert-danger py-2 fs-12 mb-0"><i class="feather-alert-circle me-1"></i>' +
+                esc(data.markdown || 'Erro ao gerar resumo.') + '</div>';
+        } else if (status === 'processing') {
+            container.innerHTML =
+                '<div class="text-center py-3">' +
+                '<div class="spinner-border text-warning" role="status"></div>' +
+                '<p class="fs-12 text-muted mb-0 mt-2">A IA está buscando dados no seu tenant e gerando o resumo. Isso leva alguns segundos.</p>' +
+                '</div>';
+        } else {
+            container.innerHTML = '<p class="fs-12 text-muted mb-0">Nenhum resumo gerado ainda.</p>';
+        }
+        var badgeHost = card.querySelector('.ai-status-badge');
+        if (badgeHost) badgeHost.innerHTML = badge(status);
+        var btn = card.querySelector('[data-ai-trigger]');
+        if (btn) btn.disabled = (status === 'processing');
+    }
+
+    function poll(card) {
+        var entityType = card.getAttribute('data-ai-entity');
+        var entityId = card.getAttribute('data-ai-id');
+        fetch('/ai/summary-status/' + entityType + '/' + entityId + '/', {
+            credentials: 'same-origin',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+        }).then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
+            if (!data || !data.ok) return;
+            renderContent(card, data);
+            if (data.status === 'processing') {
+                setTimeout(function() { poll(card); }, 3000);
+            }
+        }).catch(function() { /* silent */ });
+    }
+
+    function trigger(card) {
+        var entityType = card.getAttribute('data-ai-entity');
+        var entityId = card.getAttribute('data-ai-id');
+        var fd = new FormData(); fd.append('_', '1');
+        fetch('/ai/summarize/' + entityType + '/' + entityId + '/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+            body: fd,
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data && data.ok) {
+                renderContent(card, {status: 'processing', markdown: '', updated_at: null});
+                setTimeout(function() { poll(card); }, 2000);
+            } else {
+                var container = card.querySelector('[data-summary-container]');
+                container.innerHTML = '<div class="alert alert-danger py-2 fs-12 mb-0">' + esc(data && data.error || 'Erro ao disparar.') + '</div>';
+            }
+        }).catch(function() {
+            var container = card.querySelector('[data-summary-container]');
+            container.innerHTML = '<div class="alert alert-danger py-2 fs-12 mb-0">Falha de rede.</div>';
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-ai-trigger]');
+        if (!btn) return;
+        var card = btn.closest('[data-ai-entity]');
+        if (!card) return;
+        trigger(card);
+    });
+
+    // On load: for each card already in "processing" state, resume polling.
+    document.querySelectorAll('[data-ai-entity]').forEach(function(card) {
+        var status = (card.querySelector('.ai-status-badge .badge') || {}).textContent || '';
+        if (/Processando/i.test(status)) {
+            poll(card);
+        } else {
+            // Re-render server-side markdown via the same client-side function
+            // so bullets/bold/etc. look consistent with polled updates.
+            var markdownHost = card.querySelector('[data-summary-markdown]');
+            if (markdownHost) markdownHost.innerHTML = md(markdownHost.textContent || '');
+        }
+    });
+})();
+</script>

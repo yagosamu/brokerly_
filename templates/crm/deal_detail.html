@@ -198,26 +198,7 @@
             </div>
         </div>
 
-        <div class="card stretch stretch-full mb-4">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="card-title mb-0"><i class="feather-feather me-1"></i>Resumo com IA</h5>
-                {% if deal.ai_summary_status == 'done' %}
-                <span class="badge bg-soft-success text-success">{{ deal.get_ai_summary_status_display }}</span>
-                {% else %}
-                <span class="badge bg-gray-200 text-dark">{{ deal.get_ai_summary_status_display }}</span>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                {% if deal.ai_summary %}
-                <p class="mb-0" style="white-space: pre-line;">{{ deal.ai_summary }}</p>
-                {% else %}
-                <p class="fs-12 text-muted mb-3">Um agente de IA resumirá o histórico da negociação.</p>
-                <button type="button" class="btn btn-light-brand w-100" disabled>
-                    <i class="feather-feather me-1"></i>Resumir com IA <span class="badge bg-gray-200 text-dark ms-2">em breve</span>
-                </button>
-                {% endif %}
-            </div>
-        </div>
+{% include 'ai_agents/_ai_summary_card.html' with entity=deal entity_type='deal' entity_id=deal.id %}
     </div>
 </div>
 {% endblock %}
