@@ -18,8 +18,26 @@ os dados ao tenant do usuário autenticado.
 
 ---
 
+## Screenshots
+
+![Dashboard](docs/screenshots/dashboard_main.png)
+*Dashboard do admin: funil de vendas, KPIs, produção mensal e distribuição da carteira.*
+
+| CRM Kanban | Assistente IA |
+|:---:|:---:|
+| ![CRM Kanban](docs/screenshots/crm-kanban.png) | ![Assistente IA](docs/screenshots/assistent_chat.png) |
+| Pipeline de vendas com drag-and-drop e totalização por etapa. | Consultas em linguagem natural sobre os dados da própria corretora. |
+
+| Relatórios | Modo Escuro |
+|:---:|:---:|
+| ![Relatórios](docs/screenshots/reports.png) | ![Modo Escuro](docs/screenshots/dark-mode.png) |
+| Relatórios com filtros e exportação em CSV e PDF. | Tema escuro disponível em toda a aplicação. |
+
+---
+
 ## Índice
 
+- [Screenshots](#screenshots)
 - [Funcionalidades](#funcionalidades)
 - [Tecnologias](#tecnologias)
 - [Estrutura do Projeto](#estrutura-do-projeto)

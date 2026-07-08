@@ -18,8 +18,26 @@ authenticated user's tenant.
 
 ---
 
+## Screenshots
+
+![Dashboard](docs/screenshots/dashboard_main.png)
+*Admin dashboard: sales funnel, KPIs, monthly production, and portfolio distribution.*
+
+| CRM Kanban | AI Assistant |
+|:---:|:---:|
+| ![CRM Kanban](docs/screenshots/crm-kanban.png) | ![AI Assistant](docs/screenshots/assistent_chat.png) |
+| Drag-and-drop sales pipeline with per-stage totals. | Natural-language queries against the brokerage's own data. |
+
+| Reports | Dark Mode |
+|:---:|:---:|
+| ![Reports](docs/screenshots/reports.png) | ![Dark Mode](docs/screenshots/dark-mode.png) |
+| Filterable reports with CSV and PDF export. | Built-in dark theme across the application. |
+
+---
+
 ## Table of Contents
 
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
