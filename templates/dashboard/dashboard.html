@@ -1,0 +1,635 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}Dashboard · Brokerly{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">Início</li>
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block page_actions %}
+<form method="get" class="d-flex align-items-center gap-2 flex-wrap" id="dashboard-filter-form">
+    <div class="input-group input-group-sm" style="width: auto;">
+        <label class="input-group-text" for="dashboard-period"><i class="feather-calendar"></i></label>
+        <select name="period" id="dashboard-period" class="form-select form-select-sm">
+            <option value="30d" {% if period == '30d' %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="60d" {% if period == '60d' %}selected{% endif %}>Últimos 60 dias</option>
+            <option value="90d" {% if period == '90d' %}selected{% endif %}>Últimos 90 dias</option>
+            <option value="ytd" {% if period == 'ytd' %}selected{% endif %}>Ano corrente</option>
+            <option value="custom" {% if period == 'custom' %}selected{% endif %}>Período personalizado</option>
+        </select>
+    </div>
+    <div id="dashboard-custom-range" class="d-flex align-items-center gap-2 {% if period != 'custom' %}d-none{% endif %}">
+        <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control form-control-sm" aria-label="Data inicial">
+        <span class="fs-12 text-muted">até</span>
+        <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm" aria-label="Data final">
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary"><i class="feather-check me-1"></i>Aplicar</button>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-tile {
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        height: 100%;
+        transition: box-shadow 150ms ease-out, transform 150ms ease-out;
+    }
+    .kpi-tile:hover { box-shadow: var(--brokerly-shadow-md); transform: translateY(-1px); }
+    .kpi-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .kpi-tile-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--brokerly-text-muted);
+    }
+    .kpi-tile-icon {
+        width: 32px; height: 32px;
+        border-radius: var(--brokerly-radius-sm);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 16px;
+    }
+    .kpi-tile-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--brokerly-text-strong);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.15;
+    }
+    .kpi-tile-hint {
+        font-size: 11px;
+        color: var(--brokerly-text-muted);
+    }
+    .kpi-primary  .kpi-tile-icon { background: rgba(52, 84, 209, 0.12);  color: var(--brokerly-primary); }
+    .kpi-success  .kpi-tile-icon { background: rgba(23, 198, 102, 0.12); color: var(--brokerly-success); }
+    .kpi-info     .kpi-tile-icon { background: rgba(61, 199, 190, 0.12); color: var(--brokerly-info); }
+    .kpi-warning  .kpi-tile-icon { background: rgba(255, 162, 29, 0.12); color: var(--brokerly-warning); }
+    .kpi-danger   .kpi-tile-icon { background: rgba(234, 77, 77, 0.12);  color: var(--brokerly-danger); }
+    .kpi-dark     .kpi-tile-icon { background: rgba(40, 60, 80, 0.10);   color: var(--brokerly-text-strong); }
+
+    .insight-row {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 14px;
+        border-radius: var(--brokerly-radius-sm);
+        border: 1px solid transparent;
+        font-size: 13px;
+    }
+    .insight-row.level-info    { background: rgba(61, 199, 190, 0.10); border-color: rgba(61, 199, 190, 0.25); color: var(--brokerly-text-strong); }
+    .insight-row.level-warning { background: rgba(255, 162, 29, 0.10); border-color: rgba(255, 162, 29, 0.25); color: var(--brokerly-text-strong); }
+    .insight-row.level-danger  { background: rgba(234, 77, 77, 0.10);  border-color: rgba(234, 77, 77, 0.25);  color: var(--brokerly-text-strong); }
+    .insight-row i { flex: 0 0 auto; margin-top: 2px; }
+    .insight-row.level-info i    { color: var(--brokerly-info); }
+    .insight-row.level-warning i { color: var(--brokerly-warning); }
+    .insight-row.level-danger i  { color: var(--brokerly-danger); }
+
+    .chart-empty {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-height: 220px; padding: 24px 12px;
+        text-align: center;
+        color: var(--brokerly-text-muted);
+        font-size: 12px;
+    }
+    .chart-empty i { font-size: 28px; margin-bottom: 8px; opacity: 0.6; }
+
+    .rank-table td, .rank-table th { vertical-align: middle; padding: 10px 12px; }
+    .rank-table th {
+        font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+        text-transform: uppercase; color: var(--brokerly-text-muted);
+    }
+    .rank-table .rank-number {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 24px; height: 24px; border-radius: 50%;
+        background: var(--brokerly-surface-muted); color: var(--brokerly-text-strong);
+        font-size: 11px; font-weight: 700;
+    }
+    .rank-table tr:first-child .rank-number {
+        background: rgba(52, 84, 209, 0.14); color: var(--brokerly-primary);
+    }
+
+    .renewal-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--brokerly-border);
+    }
+    .renewal-row:last-child { border-bottom: 0; }
+    .renewal-daybadge {
+        flex: 0 0 auto;
+        min-width: 52px;
+        padding: 6px 8px;
+        border-radius: var(--brokerly-radius-sm);
+        text-align: center;
+        font-weight: 700; font-size: 11px;
+        font-variant-numeric: tabular-nums;
+    }
+    .renewal-daybadge .days { display: block; font-size: 18px; line-height: 1.1; }
+    .renewal-daybadge .label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.8; }
+    .renewal-daybadge.urgent  { background: rgba(234, 77, 77, 0.12);  color: var(--brokerly-danger); }
+    .renewal-daybadge.soon    { background: rgba(255, 162, 29, 0.12); color: var(--brokerly-warning); }
+    .renewal-daybadge.later   { background: rgba(52, 84, 209, 0.10);  color: var(--brokerly-primary); }
+    .renewal-body { flex: 1 1 auto; min-width: 0; }
+    .renewal-body strong { display: block; font-size: 13px; color: var(--brokerly-text-strong); }
+    .renewal-body small { color: var(--brokerly-text-muted); font-size: 11px; }
+
+    .funnel-legend {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11px; color: var(--brokerly-text-muted);
+    }
+    .funnel-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if no_tenant %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
+    <i class="feather-alert-triangle"></i>
+    <div>
+        <strong>Nenhuma corretora vinculada ao usuário.</strong>
+        <div class="fs-12">Contate o administrador da conta para ser adicionado a uma corretora.</div>
+    </div>
+</div>
+{% else %}
+
+{# ==== KPI ROW ==== #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-tile kpi-primary">
+            <div class="kpi-tile-head">
+                <span class="kpi-tile-label">Clientes ativos</span>
+                <span class="kpi-tile-icon"><i class="feather-users"></i></span>
+            </div>
+            <span class="kpi-tile-value">{{ kpis.clients_total }}</span>
+            <span class="kpi-tile-hint">Cadastros ativos</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-tile kpi-info">
+            <div class="kpi-tile-head">
+                <span class="kpi-tile-label">Propostas</span>
+                <span class="kpi-tile-icon"><i class="feather-file-text"></i></span>
+            </div>
+            <span class="kpi-tile-value">{{ kpis.proposals_count }}</span>
+            <span class="kpi-tile-hint">No período selecionado</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-tile kpi-success">
+            <div class="kpi-tile-head">
+                <span class="kpi-tile-label">Apólices ativas</span>
+                <span class="kpi-tile-icon"><i class="feather-shield"></i></span>
+            </div>
+            <span class="kpi-tile-value">{{ kpis.active_policies_count }}</span>
+            <span class="kpi-tile-hint">R$ {{ kpis.active_policies_premium|floatformat:2 }} em prêmio</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-tile kpi-danger">
+            <div class="kpi-tile-head">
+                <span class="kpi-tile-label">Sinistros abertos</span>
+                <span class="kpi-tile-icon"><i class="feather-alert-circle"></i></span>
+            </div>
+            <span class="kpi-tile-value">{{ kpis.open_claims_count }}</span>
+            <span class="kpi-tile-hint">Exceto pagos/encerrados</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-tile kpi-warning">
+            <div class="kpi-tile-head">
+                <span class="kpi-tile-label">Renovações 30d</span>
+                <span class="kpi-tile-icon"><i class="feather-refresh-cw"></i></span>
+            </div>
+            <span class="kpi-tile-value">{{ kpis.renewals_next_30d_count }}</span>
+            <span class="kpi-tile-hint">A vencer nos próximos 30d</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="kpi-tile kpi-dark">
+            <div class="kpi-tile-head">
+                <span class="kpi-tile-label">Comissões pendentes</span>
+                <span class="kpi-tile-icon"><i class="feather-dollar-sign"></i></span>
+            </div>
+            <span class="kpi-tile-value">R$ {{ kpis.pending_commissions_total|floatformat:2 }}</span>
+            <span class="kpi-tile-hint">A receber</span>
+        </div>
+    </div>
+</div>
+
+{# ==== INSIGHTS ==== #}
+{% if insights %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex flex-column gap-2">
+            {% for insight in insights %}
+            <div class="insight-row level-{{ insight.level }}" role="note">
+                <i class="feather-{{ insight.icon }}"></i>
+                <span>{{ insight.text }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ==== FUNNEL + CLAIMS BY STATUS ==== #}
+<div class="row">
+    <div class="col-12 col-xl-8">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title mb-0"><i class="feather-filter me-1"></i>Funil de negociações</h5>
+                    <span class="fs-11 text-muted">{{ funnel.pipeline_name|default:'Sem pipeline configurado' }}</span>
+                </div>
+                <a href="{% url 'crm:kanban' %}" class="btn btn-sm btn-light-brand">
+                    <i class="feather-layout me-1"></i>Abrir kanban
+                </a>
+            </div>
+            <div class="card-body">
+                {% if funnel.stages %}
+                <div id="chart-funnel" style="min-height: 320px;"></div>
+                <div class="d-flex flex-wrap gap-3 mt-2">
+                    {% for stage in funnel.stages %}
+                    <span class="funnel-legend">
+                        <span class="dot" style="background: {{ stage.color }};"></span>
+                        <span>{{ stage.name }} · <strong>{{ stage.count }}</strong></span>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="chart-empty">
+                    <i class="feather-filter"></i>
+                    <p class="mb-2">Nenhum pipeline configurado ainda.</p>
+                    <a href="{% url 'crm:kanban' %}" class="btn btn-sm btn-light-brand">Configurar CRM</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-4">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="feather-alert-circle me-1"></i>Sinistros por status</h5>
+                <span class="fs-11 text-muted">No período selecionado</span>
+            </div>
+            <div class="card-body">
+                {% if claims_status %}
+                <div id="chart-claims" style="min-height: 260px;"></div>
+                {% else %}
+                <div class="chart-empty">
+                    <i class="feather-check-circle"></i>
+                    <p class="mb-0">Nenhum sinistro no período.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ==== MONTHLY PREMIUM + COMMISSION ==== #}
+<div class="row">
+    <div class="col-12">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title mb-0"><i class="feather-trending-up me-1"></i>Prêmio e comissão por mês</h5>
+                    <span class="fs-11 text-muted">Últimos 12 meses</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="chart-monthly" style="min-height: 320px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ==== LINE OF BUSINESS + TOP INSURERS ==== #}
+<div class="row">
+    <div class="col-12 col-xl-6">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="feather-grid me-1"></i>Apólices por ramo</h5>
+                <span class="fs-11 text-muted">No período selecionado</span>
+            </div>
+            <div class="card-body">
+                {% if policies_by_line %}
+                <div id="chart-lob" style="min-height: 260px;"></div>
+                {% else %}
+                <div class="chart-empty">
+                    <i class="feather-grid"></i>
+                    <p class="mb-0">Sem apólices no período.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-6">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="feather-award me-1"></i>Top seguradoras</h5>
+                <span class="fs-11 text-muted">Por prêmio (apólices ativas)</span>
+            </div>
+            <div class="card-body p-0">
+                {% if top_insurers %}
+                <table class="table rank-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>Seguradora</th>
+                            <th class="text-end">Apólices</th>
+                            <th class="text-end">Prêmio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for insurer in top_insurers %}
+                        <tr>
+                            <td><span class="rank-number">{{ forloop.counter }}</span></td>
+                            <td class="fw-semibold">{{ insurer.insurer_name }}</td>
+                            <td class="text-end">{{ insurer.policies }}</td>
+                            <td class="text-end text-dark fw-semibold">R$ {{ insurer.premium|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="chart-empty">
+                    <i class="feather-award"></i>
+                    <p class="mb-0">Sem apólices ativas ainda.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ==== TOP PRODUCERS + RENEWALS ==== #}
+<div class="row">
+    <div class="col-12 col-xl-6">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="feather-user-check me-1"></i>Top produtores</h5>
+                <span class="fs-11 text-muted">Por negociações ganhas</span>
+            </div>
+            <div class="card-body p-0">
+                {% if top_producers %}
+                <table class="table rank-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th>Produtor</th>
+                            <th class="text-end">Deals</th>
+                            <th class="text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producer in top_producers %}
+                        <tr>
+                            <td><span class="rank-number">{{ forloop.counter }}</span></td>
+                            <td class="fw-semibold">{{ producer.producer_name }}</td>
+                            <td class="text-end">{{ producer.deals }}</td>
+                            <td class="text-end text-dark fw-semibold">R$ {{ producer.value|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="chart-empty">
+                    <i class="feather-user-check"></i>
+                    <p class="mb-0">Sem negociações ganhas no CRM.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-6">
+        <div class="card stretch stretch-full mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title mb-0"><i class="feather-refresh-cw me-1"></i>Próximas renovações</h5>
+                    <span class="fs-11 text-muted">Janela de 90 dias</span>
+                </div>
+                <a href="{% url 'renewals:renewal_list' %}" class="btn btn-sm btn-light-brand">
+                    <i class="feather-arrow-right me-1"></i>Ver todas
+                </a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_renewals %}
+                <div>
+                    {% for renewal in upcoming_renewals %}
+                    <div class="renewal-row">
+                        <div class="renewal-daybadge {% if renewal.days_left <= 7 %}urgent{% elif renewal.days_left <= 30 %}soon{% else %}later{% endif %}">
+                            <span class="days">{{ renewal.days_left }}</span>
+                            <span class="label">dias</span>
+                        </div>
+                        <div class="renewal-body">
+                            <strong>#{{ renewal.policy_number }} · {{ renewal.client_name }}</strong>
+                            <small>Vence em {{ renewal.due_date|date:'d/m/Y' }} · R$ {{ renewal.total_premium|floatformat:2 }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="chart-empty">
+                    <i class="feather-check-circle"></i>
+                    <p class="mb-0">Nenhuma renovação pendente nos próximos 90 dias.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ funnel|json_script:"data-funnel" }}
+{{ claims_status|json_script:"data-claims" }}
+{{ monthly_series|json_script:"data-monthly" }}
+{{ policies_by_line|json_script:"data-lob" }}
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/duralux/js/apexcharts.min.js' %}"></script>
+<script>
+(function() {
+    if (typeof ApexCharts === 'undefined') return;
+
+    var css = getComputedStyle(document.documentElement);
+    var brand = {
+        primary: (css.getPropertyValue('--brokerly-primary') || '#3454d1').trim(),
+        success: (css.getPropertyValue('--brokerly-success') || '#17c666').trim(),
+        info:    (css.getPropertyValue('--brokerly-info')    || '#3dc7be').trim(),
+        warning: (css.getPropertyValue('--brokerly-warning') || '#ffa21d').trim(),
+        danger:  (css.getPropertyValue('--brokerly-danger')  || '#ea4d4d').trim(),
+        dark:    (css.getPropertyValue('--brokerly-dark')    || '#283c50').trim(),
+        muted:   (css.getPropertyValue('--brokerly-text-muted') || '#98a0ae').trim(),
+        border:  (css.getPropertyValue('--brokerly-border')  || '#e7e9ee').trim(),
+        text:    (css.getPropertyValue('--brokerly-text')    || '#6b7885').trim(),
+    };
+    var statusColorMap = {
+        'opened': brand.info,
+        'under_analysis': brand.warning,
+        'approved': brand.success,
+        'denied': brand.danger,
+        'paid': brand.primary,
+        'closed': brand.muted,
+    };
+    var lobPalette = [brand.primary, brand.info, brand.success, brand.warning, brand.danger, brand.dark];
+
+    function safeParse(id) {
+        var node = document.getElementById(id);
+        if (!node) return null;
+        try { return JSON.parse(node.textContent); } catch (e) { return null; }
+    }
+    function fmtCurrency(v) {
+        try {
+            return new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
+        } catch (e) { return 'R$ ' + Number(v).toFixed(2); }
+    }
+    function fmtMonth(iso) {
+        var parts = iso.split('-');
+        var d = new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1));
+        return d.toLocaleDateString('pt-BR', {month: 'short', year: '2-digit', timeZone: 'UTC'});
+    }
+
+    // ---- Funnel (horizontal bar) ----
+    var funnel = safeParse('data-funnel');
+    if (funnel && funnel.stages && funnel.stages.length) {
+        var stageNames = funnel.stages.map(function(s) { return s.name; });
+        var stageCounts = funnel.stages.map(function(s) { return s.count; });
+        var stageColors = funnel.stages.map(function(s) { return s.color || brand.primary; });
+        new ApexCharts(document.querySelector('#chart-funnel'), {
+            chart: { type: 'bar', height: 320, toolbar: {show: false}, fontFamily: 'inherit' },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    barHeight: '65%',
+                    borderRadius: 4,
+                    distributed: true,
+                    dataLabels: { position: 'top' },
+                },
+            },
+            series: [{name: 'Negociações', data: stageCounts}],
+            xaxis: {
+                categories: stageNames,
+                labels: { style: {colors: brand.muted, fontSize: '11px'} },
+                axisBorder: {color: brand.border}, axisTicks: {color: brand.border},
+            },
+            yaxis: { labels: { style: {colors: brand.text, fontSize: '12px'} } },
+            colors: stageColors,
+            dataLabels: {
+                enabled: true, offsetX: 24,
+                style: {colors: [brand.text], fontSize: '11px', fontWeight: 600},
+                formatter: function(v) { return v; },
+            },
+            grid: { borderColor: brand.border, strokeDashArray: 4, xaxis: {lines: {show: true}}, yaxis: {lines: {show: false}} },
+            legend: { show: false },
+            tooltip: { y: { formatter: function(v) { return v + ' negociação(ões)'; } } },
+        }).render();
+    }
+
+    // ---- Claims by status (donut) ----
+    var claims = safeParse('data-claims');
+    if (claims && claims.length) {
+        var labels = claims.map(function(r) { return r.label; });
+        var counts = claims.map(function(r) { return r.count; });
+        var colors = claims.map(function(r) { return statusColorMap[r.status] || brand.muted; });
+        new ApexCharts(document.querySelector('#chart-claims'), {
+            chart: { type: 'donut', height: 260, fontFamily: 'inherit' },
+            series: counts,
+            labels: labels,
+            colors: colors,
+            legend: { position: 'bottom', fontSize: '12px', labels: {colors: brand.text} },
+            dataLabels: { style: {fontSize: '11px', fontWeight: 600} },
+            plotOptions: {
+                pie: { donut: { size: '65%', labels: {
+                    show: true,
+                    total: { show: true, label: 'Total', color: brand.text, fontSize: '12px',
+                        formatter: function(w) { return w.globals.seriesTotals.reduce(function(a, b) { return a + b; }, 0); } },
+                } } },
+            },
+            stroke: { colors: ['transparent'] },
+            tooltip: { y: { formatter: function(v) { return v + ' sinistro(s)'; } } },
+            responsive: [{ breakpoint: 480, options: { chart: {height: 220}, legend: {position: 'bottom'} } }],
+        }).render();
+    }
+
+    // ---- Monthly premium + commission (combo) ----
+    var monthly = safeParse('data-monthly');
+    if (monthly && monthly.length) {
+        var months = monthly.map(function(r) { return fmtMonth(r.month); });
+        var premium = monthly.map(function(r) { return parseFloat(r.total || 0); });
+        var commission = monthly.map(function(r) { return parseFloat(r.commission_total || 0); });
+        new ApexCharts(document.querySelector('#chart-monthly'), {
+            chart: { type: 'line', height: 320, toolbar: {show: false}, fontFamily: 'inherit', stacked: false },
+            series: [
+                {name: 'Prêmio', type: 'column', data: premium},
+                {name: 'Comissão', type: 'line', data: commission},
+            ],
+            stroke: { width: [0, 3], curve: 'smooth' },
+            colors: [brand.primary, brand.info],
+            plotOptions: { bar: { columnWidth: '55%', borderRadius: 4 } },
+            xaxis: {
+                categories: months,
+                labels: { style: {colors: brand.muted, fontSize: '11px'} },
+                axisBorder: {color: brand.border}, axisTicks: {color: brand.border},
+            },
+            yaxis: [
+                { title: {text: 'Prêmio (R$)', style: {color: brand.text, fontWeight: 500, fontSize: '11px'}},
+                  labels: { style: {colors: brand.muted}, formatter: function(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); } } },
+                { opposite: true, title: {text: 'Comissão (R$)', style: {color: brand.text, fontWeight: 500, fontSize: '11px'}},
+                  labels: { style: {colors: brand.muted}, formatter: function(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); } } },
+            ],
+            grid: { borderColor: brand.border, strokeDashArray: 4 },
+            legend: { position: 'top', horizontalAlign: 'right', fontSize: '12px', labels: {colors: brand.text} },
+            dataLabels: { enabled: false },
+            tooltip: { shared: true, intersect: false, y: { formatter: function(v) { return fmtCurrency(v); } } },
+        }).render();
+    }
+
+    // ---- Policies by line (donut) ----
+    var lob = safeParse('data-lob');
+    if (lob && lob.length) {
+        var labels = lob.map(function(r) { return r.line_of_business_name || 'Sem ramo'; });
+        var counts = lob.map(function(r) { return r.count; });
+        new ApexCharts(document.querySelector('#chart-lob'), {
+            chart: { type: 'donut', height: 260, fontFamily: 'inherit' },
+            series: counts,
+            labels: labels,
+            colors: lobPalette,
+            legend: { position: 'bottom', fontSize: '12px', labels: {colors: brand.text} },
+            dataLabels: { style: {fontSize: '11px', fontWeight: 600} },
+            plotOptions: {
+                pie: { donut: { size: '65%', labels: {
+                    show: true,
+                    total: { show: true, label: 'Apólices', color: brand.text, fontSize: '12px' },
+                } } },
+            },
+            stroke: { colors: ['transparent'] },
+            tooltip: { y: { formatter: function(v, ctx) {
+                var row = lob[ctx.seriesIndex];
+                return v + ' · ' + fmtCurrency(parseFloat((row && row.premium) || 0));
+            } } },
+        }).render();
+    }
+
+    // ---- Filter bar: toggle custom range ----
+    var periodSelect = document.getElementById('dashboard-period');
+    var customRange = document.getElementById('dashboard-custom-range');
+    if (periodSelect && customRange) {
+        periodSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customRange.classList.remove('d-none');
+            } else {
+                customRange.classList.add('d-none');
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}
