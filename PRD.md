@@ -3701,12 +3701,12 @@ flowchart LR
 
 ### Sprint 23 — Dashboard
 **Objetivo:** visão analítica.
-- [ ] App `dashboard`: agregações por tenant
-- [ ] Cards de KPIs (clientes, apólices, propostas, sinistros, renovações, comissões)
-- [ ] **Gráfico de funil** de negociações (níveis = etapas)
-- [ ] Gráficos: apólices por ramo, prêmio/comissão por mês, sinistros por status, top seguradoras
-- [ ] Filtro de período afetando todos os gráficos
-- [ ] Bloco de insights
+- [x] App `dashboard`: agregações por tenant
+- [x] Cards de KPIs (clientes, apólices, propostas, sinistros, renovações, comissões)
+- [x] **Gráfico de funil** de negociações (níveis = etapas)
+- [x] Gráficos: apólices por ramo, prêmio/comissão por mês, sinistros por status, top seguradoras
+- [x] Filtro de período afetando todos os gráficos
+- [x] Bloco de insights
 
 **Entrega:** dashboard completo com funil e gráficos.
 
