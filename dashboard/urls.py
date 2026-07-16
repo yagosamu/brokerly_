@@ -6,5 +6,5 @@ from dashboard.views import DashboardView
 app_name = 'dashboard'
 
 urlpatterns = [
-    path('', DashboardView.as_view(), name='home'),
+    path('', DashboardView.as_view(), name='panel'),
 ]
