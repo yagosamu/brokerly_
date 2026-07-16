@@ -201,6 +201,21 @@ class ChatSessionListCreateView(LoginRequiredMixin, View):
         return JsonResponse({'ok': True, **_session_payload(session)}, status=201)
 
 
+class ChatSessionMessagesView(LoginRequiredMixin, View):
+    """GET returns the persisted messages for a session."""
+
+    def get(self, request, session_id):
+        session = _session_or_404(request, session_id)
+        messages = session.messages.filter(
+            role__in=(ChatMessage.Role.USER, ChatMessage.Role.ASSISTANT),
+        ).order_by('created_at')
+        return JsonResponse({
+            'ok': True,
+            'session': _session_payload(session),
+            'messages': [_message_payload(m) for m in messages],
+        })
+
+
 class ChatSessionRenameView(LoginRequiredMixin, View):
     """POST title to rename a session."""
 

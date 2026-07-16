@@ -8,6 +8,11 @@ app_name = 'ai_agents'
 urlpatterns = [
     path('chat/', views.ChatSessionListCreateView.as_view(), name='chat_sessions'),
     path(
+        'chat/<int:session_id>/messages/',
+        views.ChatSessionMessagesView.as_view(),
+        name='chat_messages',
+    ),
+    path(
         'chat/<int:session_id>/rename/',
         views.ChatSessionRenameView.as_view(),
         name='chat_rename',
