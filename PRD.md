@@ -3712,11 +3712,11 @@ flowchart LR
 
 ### Sprint 24 — Relatórios (PDF/CSV)
 **Objetivo:** exportações.
-- [ ] App `reports`: telas e menu de relatórios
-- [ ] Geração PDF com ReportLab/PyPDF (cabeçalho da corretora)
-- [ ] Exportação CSV
-- [ ] Relatórios: carteira, propostas, apólices, sinistros, renovações, comissões, seguradoras, produtividade
-- [ ] PDFs pesados via Celery + notificação ao concluir
+- [x] App `reports`: telas e menu de relatórios
+- [x] Geração PDF com ReportLab/PyPDF (cabeçalho da corretora)
+- [x] Exportação CSV
+- [x] Relatórios: carteira, propostas, apólices, sinistros, renovações, comissões, seguradoras, produtividade
+- [x] PDFs pesados via Celery + notificação ao concluir
 
 **Entrega:** relatórios exportáveis em PDF e CSV.
 
