@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
+from ai_agents.views import ChatPageView
 from dashboard.views import DashboardView
 
 
@@ -16,6 +17,7 @@ urlpatterns = [
     path('notifications/', include('notifications.urls')),
     path('renovacoes/', include('renewals.urls')),
     path('ai/', include('ai_agents.urls')),
+    path('chat/', ChatPageView.as_view(), name='chat_page'),
     path('', include('insurers.urls')),
     path('', include('insurance.urls')),
     path('', include('partners.urls')),
