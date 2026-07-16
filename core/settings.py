@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'renewals',
     'ai_agents',
     'dashboard',
+    'reports',
 ]
 
 MIDDLEWARE = [

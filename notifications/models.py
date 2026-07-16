@@ -10,6 +10,7 @@ class Notification(TenantAwareModel):
     class Type(models.TextChoices):
         AI_SUMMARY = 'ai_summary', _('Resumo de IA')
         REPORT = 'report', _('Relatório')
+        REPORT_READY = 'report_ready', _('Relatório pronto')
         RENEWAL = 'renewal', _('Renovação')
         SYSTEM = 'system', _('Sistema')
 

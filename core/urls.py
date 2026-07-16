@@ -18,6 +18,7 @@ urlpatterns = [
     path('renovacoes/', include('renewals.urls')),
     path('ai/', include('ai_agents.urls')),
     path('chat/', ChatPageView.as_view(), name='chat_page'),
+    path('relatorios/', include('reports.urls')),
     path('', include('insurers.urls')),
     path('', include('insurance.urls')),
     path('', include('partners.urls')),
