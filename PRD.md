@@ -3723,9 +3723,9 @@ flowchart LR
 ### Sprint 25 — Landing Page
 **Objetivo:** aquisição.
 - [x] Landing pública na raiz (`/`), responsiva, com DS
-- [ ] Seção de planos (Free ativo; pagos "Em breve")
-- [ ] CTAs para cadastro e login
-- [ ] Copy direcionada às personas
+- [x] Seção de planos (Free ativo; pagos "Em breve")
+- [x] CTAs para cadastro e login
+- [x] Copy direcionada às personas
 
 **Entrega:** landing em `<seu-dominio>` convertendo em cadastro.
 
