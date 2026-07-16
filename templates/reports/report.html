@@ -1,0 +1,310 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}{{ report.name }} · Relatórios · Brokerly{% endblock %}
+{% block page_title %}{{ report.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reports:menu' %}">Relatórios</a></li>
+<li class="breadcrumb-item active">{{ report.name }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'reports:menu' %}" class="btn btn-sm btn-light-brand">
+    <i class="feather-arrow-left me-1"></i>Voltar
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-hero {
+        display: flex; align-items: center; gap: 16px;
+    }
+    .report-hero-icon {
+        width: 52px; height: 52px;
+        border-radius: var(--brokerly-radius-md);
+        background: rgba(52, 84, 209, 0.10);
+        color: var(--brokerly-primary);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 24px;
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+    .form-hint { font-size: 11px; color: var(--brokerly-text-muted); margin-top: 4px; }
+    .action-card {
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        padding: 20px;
+        display: flex; flex-direction: column; gap: 12px;
+        background: var(--brokerly-surface);
+        height: 100%;
+    }
+    .action-card-head { display: flex; align-items: center; gap: 10px; }
+    .action-card-icon {
+        width: 40px; height: 40px;
+        border-radius: var(--brokerly-radius-sm);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 18px;
+    }
+    .action-csv .action-card-icon { background: rgba(23, 198, 102, 0.12); color: var(--brokerly-success); }
+    .action-pdf .action-card-icon { background: rgba(234, 77, 77, 0.12); color: var(--brokerly-danger); }
+    .action-card h6 { margin: 0; font-size: 14px; color: var(--brokerly-text-strong); font-weight: 600; }
+    .action-card p { margin: 0; font-size: 12.5px; color: var(--brokerly-text); }
+
+    .job-status {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 14px;
+        border-radius: var(--brokerly-radius-sm);
+        background: var(--brokerly-surface-muted);
+        border: 1px solid var(--brokerly-border);
+        font-size: 13px;
+        color: var(--brokerly-text-strong);
+    }
+    .job-status.status-processing { background: rgba(255, 162, 29, 0.08); border-color: rgba(255, 162, 29, 0.30); }
+    .job-status.status-done       { background: rgba(23, 198, 102, 0.08); border-color: rgba(23, 198, 102, 0.30); }
+    .job-status.status-error      { background: rgba(234, 77, 77, 0.08);  border-color: rgba(234, 77, 77, 0.30); }
+    .job-status i { flex: 0 0 auto; }
+    .job-status .job-msg { flex: 1 1 auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="report-hero">
+            <span class="report-hero-icon"><i class="feather-{{ report.icon }}"></i></span>
+            <div>
+                <h4 class="mb-1">{{ report.name }}</h4>
+                <p class="fs-12 text-muted mb-0">{{ report.description }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="report-filter-form" method="get">
+    <div class="card stretch stretch-full mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="feather-filter me-1"></i>Filtros</h5>
+            <span class="fs-11 text-muted">Aplicam-se a CSV e PDF. Vazio = sem restrição.</span>
+        </div>
+        <div class="card-body">
+            {% if report.filters %}
+            <div class="filter-grid">
+                {% for field in report.filters %}
+                    {% if field == 'date_from' %}
+                    <div>
+                        <label for="f-date-from" class="form-label fs-12 fw-semibold">Data inicial</label>
+                        <input type="date" id="f-date-from" name="date_from" value="{{ params.date_from|default:'' }}" class="form-control form-control-sm">
+                    </div>
+                    {% elif field == 'date_to' %}
+                    <div>
+                        <label for="f-date-to" class="form-label fs-12 fw-semibold">Data final</label>
+                        <input type="date" id="f-date-to" name="date_to" value="{{ params.date_to|default:'' }}" class="form-control form-control-sm">
+                    </div>
+                    {% elif field == 'status' %}
+                    <div>
+                        <label for="f-status" class="form-label fs-12 fw-semibold">Status</label>
+                        <input type="text" id="f-status" name="status" value="{{ params.status|default:'' }}" class="form-control form-control-sm" placeholder="ex: active">
+                        <div class="form-hint">Deixe em branco para todos os status.</div>
+                    </div>
+                    {% elif field == 'insurer_id' %}
+                    <div>
+                        <label for="f-insurer" class="form-label fs-12 fw-semibold">ID da seguradora</label>
+                        <input type="number" id="f-insurer" name="insurer_id" value="{{ params.insurer_id|default:'' }}" class="form-control form-control-sm" min="1">
+                    </div>
+                    {% elif field == 'line_of_business_id' %}
+                    <div>
+                        <label for="f-lob" class="form-label fs-12 fw-semibold">ID do ramo</label>
+                        <input type="number" id="f-lob" name="line_of_business_id" value="{{ params.line_of_business_id|default:'' }}" class="form-control form-control-sm" min="1">
+                    </div>
+                    {% elif field == 'horizon_days' %}
+                    <div>
+                        <label for="f-horizon" class="form-label fs-12 fw-semibold">Horizonte (dias)</label>
+                        <input type="number" id="f-horizon" name="horizon_days" value="{{ params.horizon_days|default:'90' }}" class="form-control form-control-sm" min="1" max="365">
+                    </div>
+                    {% elif field == 'limit' %}
+                    <div>
+                        <label for="f-limit" class="form-label fs-12 fw-semibold">Limite</label>
+                        <input type="number" id="f-limit" name="limit" value="{{ params.limit|default:'10' }}" class="form-control form-control-sm" min="1" max="100">
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="feather-check me-1"></i>Aplicar filtros
+                </button>
+                <a href="{% url 'reports:detail' report_type %}" class="btn btn-sm btn-light-brand">
+                    <i class="feather-x me-1"></i>Limpar
+                </a>
+            </div>
+            {% else %}
+            <p class="fs-12 text-muted mb-0">Este relatório não aceita filtros — retorna a visão completa do tenant.</p>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+<div class="row g-3">
+    <div class="col-12 col-md-6">
+        <div class="action-card action-csv">
+            <div class="action-card-head">
+                <span class="action-card-icon"><i class="feather-download"></i></span>
+                <h6>Baixar CSV</h6>
+            </div>
+            <p>Planilha UTF-8 com separador <code>;</code> e BOM para abrir no Excel/LibreOffice sem ajustes.</p>
+            <div class="mt-auto">
+                <a id="csv-download-btn" href="{% url 'reports:csv' report_type %}" class="btn btn-success">
+                    <i class="feather-download me-1"></i>Baixar planilha
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="action-card action-pdf">
+            <div class="action-card-head">
+                <span class="action-card-icon"><i class="feather-file"></i></span>
+                <h6>Gerar PDF</h6>
+            </div>
+            <p>Documento A4 com cabeçalho da corretora, filtros aplicados e tabela paginada. Gerado em segundo plano — você é notificado ao concluir.</p>
+            <form id="pdf-request-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" id="pdf-request-btn">
+                    <i class="feather-file-plus me-1"></i>Gerar PDF
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="pdf-job-container" class="mt-3"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var filterForm = document.getElementById('report-filter-form');
+    var csvBtn = document.getElementById('csv-download-btn');
+    var pdfForm = document.getElementById('pdf-request-form');
+    var pdfBtn = document.getElementById('pdf-request-btn');
+    var jobContainer = document.getElementById('pdf-job-container');
+    var csrfToken = pdfForm.querySelector('[name=csrfmiddlewaretoken]').value;
+    var reportType = '{{ report_type|escapejs }}';
+    var csvBase = '{% url "reports:csv" report_type %}';
+    var pdfBase = '{% url "reports:pdf_request" report_type %}';
+
+    function currentQuery() {
+        var fd = new FormData(filterForm);
+        var pairs = [];
+        fd.forEach(function(v, k) {
+            var val = (v || '').toString().trim();
+            if (val) pairs.push(encodeURIComponent(k) + '=' + encodeURIComponent(val));
+        });
+        return pairs.join('&');
+    }
+
+    function updateCsvHref() {
+        var q = currentQuery();
+        csvBtn.href = csvBase + (q ? '?' + q : '');
+    }
+
+    if (filterForm) {
+        filterForm.addEventListener('input', updateCsvHref);
+        filterForm.addEventListener('change', updateCsvHref);
+        updateCsvHref();
+    }
+
+    function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+
+    function renderJob(state, jobId, message, downloadUrl) {
+        var iconMap = {
+            'pending':    '<div class="spinner-border spinner-border-sm text-warning" role="status"></div>',
+            'processing': '<div class="spinner-border spinner-border-sm text-warning" role="status"></div>',
+            'done':       '<i class="feather-check-circle text-success"></i>',
+            'error':      '<i class="feather-alert-circle text-danger"></i>',
+        };
+        var labelMap = {
+            'pending':    'Aguardando processamento…',
+            'processing': 'Gerando PDF em segundo plano…',
+            'done':       'PDF pronto para download.',
+            'error':      'Falha ao gerar o PDF.',
+        };
+        var html =
+            '<div class="job-status status-' + state + '">' +
+                (iconMap[state] || '') +
+                '<div class="job-msg">' +
+                    '<div><strong>#' + jobId + '</strong> · ' + esc(labelMap[state] || state) + '</div>' +
+                    (message ? '<div class="fs-11 text-muted mt-1">' + esc(message) + '</div>' : '') +
+                '</div>' +
+                (state === 'done' && downloadUrl
+                    ? '<a href="' + esc(downloadUrl) + '" class="btn btn-sm btn-primary"><i class="feather-download me-1"></i>Baixar PDF</a>'
+                    : '') +
+            '</div>';
+        jobContainer.innerHTML = html;
+    }
+
+    function pollJob(jobId) {
+        fetch('/relatorios/pdf/status/' + jobId + '/', {
+            credentials: 'same-origin',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+        }).then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
+            if (!data || !data.ok) {
+                renderJob('error', jobId, 'Não foi possível consultar o status.');
+                pdfBtn.disabled = false;
+                return;
+            }
+            if (data.status === 'done') {
+                renderJob('done', jobId, '', data.download_url);
+                pdfBtn.disabled = false;
+            } else if (data.status === 'error') {
+                renderJob('error', jobId, data.error_message || 'Erro desconhecido.');
+                pdfBtn.disabled = false;
+            } else {
+                renderJob(data.status, jobId, '');
+                setTimeout(function() { pollJob(jobId); }, 3000);
+            }
+        }).catch(function() {
+            renderJob('error', jobId, 'Falha de rede ao consultar status.');
+            pdfBtn.disabled = false;
+        });
+    }
+
+    pdfForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        pdfBtn.disabled = true;
+        renderJob('pending', '—', 'Enviando pedido…', null);
+        var body = currentQuery();
+        fetch(pdfBase, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body,
+        }).then(function(r) { return r.json().then(function(data) { return {status: r.status, data: data}; }); })
+          .then(function(res) {
+            if (res.status === 202 && res.data.job_id) {
+                renderJob('processing', res.data.job_id, '');
+                setTimeout(function() { pollJob(res.data.job_id); }, 2000);
+            } else {
+                renderJob('error', '—', (res.data && res.data.error) || 'Erro ao disparar geração.');
+                pdfBtn.disabled = false;
+            }
+        }).catch(function() {
+            renderJob('error', '—', 'Falha de rede.');
+            pdfBtn.disabled = false;
+        });
+    });
+})();
+</script>
+{% endblock %}

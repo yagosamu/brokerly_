@@ -1,0 +1,95 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}Relatórios · Brokerly{% endblock %}
+{% block page_title %}Relatórios{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">Início</li>
+<li class="breadcrumb-item active">Relatórios</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        display: flex; flex-direction: column;
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        padding: 20px;
+        gap: 12px;
+        height: 100%;
+        transition: box-shadow 150ms ease-out, transform 150ms ease-out, border-color 150ms ease-out;
+        text-decoration: none;
+        color: inherit;
+    }
+    .report-card:hover {
+        box-shadow: var(--brokerly-shadow-md);
+        transform: translateY(-2px);
+        border-color: rgba(52, 84, 209, 0.35);
+        color: inherit;
+    }
+    .report-card-icon {
+        width: 44px; height: 44px; flex: 0 0 auto;
+        border-radius: var(--brokerly-radius-sm);
+        background: rgba(52, 84, 209, 0.10);
+        color: var(--brokerly-primary);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 20px;
+    }
+    .report-card-title {
+        font-size: 15px; font-weight: 600;
+        color: var(--brokerly-text-strong);
+        margin: 0;
+    }
+    .report-card-desc {
+        font-size: 12.5px; color: var(--brokerly-text);
+        margin: 0;
+        line-height: 1.55;
+    }
+    .report-card-cta {
+        margin-top: auto;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 600;
+        color: var(--brokerly-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card stretch stretch-full mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-start gap-3">
+            <span class="report-card-icon" style="width: 48px; height: 48px; font-size: 22px;">
+                <i class="feather-bar-chart-2"></i>
+            </span>
+            <div>
+                <h5 class="mb-1">Exportações da carteira</h5>
+                <p class="fs-13 text-muted mb-0">Baixe planilhas (CSV) para uso interno ou relatórios em PDF com o cabeçalho da corretora. Todos filtrados automaticamente pelo seu tenant.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for key, report in reports.items %}
+    <div class="col-12 col-md-6 col-xl-4">
+        <a href="{% url 'reports:detail' key %}" class="report-card">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+                <span class="report-card-icon"><i class="feather-{{ report.icon }}"></i></span>
+                {% if key == 'produtividade' %}
+                <span class="badge bg-soft-warning text-warning fs-11">Sensível</span>
+                {% endif %}
+            </div>
+            <h6 class="report-card-title">{{ report.name }}</h6>
+            <p class="report-card-desc">{{ report.description }}</p>
+            <span class="report-card-cta">
+                Abrir <i class="feather-arrow-right"></i>
+            </span>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
