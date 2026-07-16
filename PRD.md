@@ -3690,12 +3690,12 @@ flowchart LR
 
 ### Sprint 22 — Chat com IA
 **Objetivo:** chat com streaming e tools de tenant.
-- [ ] Models `ChatSession` e `ChatMessage` (por usuário, tenant-aware)
-- [ ] Tela de chat (menu lateral) com sidebar de sessões (criar/renomear/excluir)
-- [ ] Chat Agent (tool-calling) com `build_tenant_tools`
-- [ ] Streaming via `StreamingHttpResponse` (SSE) + `EventSource`
-- [ ] Renderização de Markdown → HTML (com sanitização)
-- [ ] Persistência do histórico por sessão
+- [x] Models `ChatSession` e `ChatMessage` (por usuário, tenant-aware)
+- [x] Tela de chat (menu lateral) com sidebar de sessões (criar/renomear/excluir)
+- [x] Chat Agent (tool-calling) com `build_tenant_tools`
+- [x] Streaming via `StreamingHttpResponse` (SSE) + `EventSource`
+- [x] Renderização de Markdown → HTML (com sanitização)
+- [x] Persistência do histórico por sessão
 
 **Entrega:** chat responde sobre a carteira do tenant com streaming.
 
