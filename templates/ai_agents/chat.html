@@ -1,0 +1,701 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}Chat IA · Brokerly{% endblock %}
+{% block page_title %}Chat IA{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">Início</li>
+<li class="breadcrumb-item active">Chat IA</li>
+{% endblock %}
+
+{% block page_actions %}
+<button type="button" class="btn btn-sm btn-primary" data-chat-new>
+    <i class="feather-plus me-1"></i>Nova conversa
+</button>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-shell {
+        display: flex;
+        gap: 16px;
+        min-height: calc(100vh - var(--brokerly-topbar-height) - 220px);
+        max-height: calc(100vh - var(--brokerly-topbar-height) - 220px);
+    }
+    .chat-sessions {
+        flex: 0 0 300px;
+        display: flex; flex-direction: column;
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        overflow: hidden;
+    }
+    .chat-sessions-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--brokerly-border);
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .chat-sessions-header h6 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--brokerly-text-muted); font-weight: 600; }
+    .chat-sessions-list { flex: 1 1 auto; overflow-y: auto; padding: 8px; }
+    .chat-session {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 12px;
+        border-radius: var(--brokerly-radius-sm);
+        cursor: pointer;
+        transition: background-color 150ms ease-out;
+        margin-bottom: 4px;
+        border: 1px solid transparent;
+    }
+    .chat-session:hover { background: var(--brokerly-surface-muted); }
+    .chat-session.active {
+        background: rgba(52, 84, 209, 0.10);
+        border-color: rgba(52, 84, 209, 0.25);
+    }
+    .chat-session-icon {
+        width: 32px; height: 32px; flex: 0 0 auto;
+        background: var(--brokerly-surface-muted);
+        border-radius: var(--brokerly-radius-sm);
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--brokerly-text-muted);
+    }
+    .chat-session.active .chat-session-icon {
+        background: rgba(52, 84, 209, 0.16);
+        color: var(--brokerly-primary);
+    }
+    .chat-session-body { flex: 1 1 auto; min-width: 0; }
+    .chat-session-title {
+        display: block;
+        font-size: 13px; font-weight: 600;
+        color: var(--brokerly-text-strong);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chat-session-time {
+        display: block;
+        font-size: 11px;
+        color: var(--brokerly-text-muted);
+        margin-top: 2px;
+    }
+    .chat-session-actions {
+        display: none; align-items: center; gap: 4px;
+        flex: 0 0 auto;
+    }
+    .chat-session:hover .chat-session-actions,
+    .chat-session.active .chat-session-actions { display: flex; }
+    .chat-session-actions .btn {
+        padding: 2px 6px; font-size: 12px; line-height: 1;
+        color: var(--brokerly-text-muted); background: transparent; border: 0;
+    }
+    .chat-session-actions .btn:hover { color: var(--brokerly-text-strong); }
+
+    .chat-main {
+        flex: 1 1 auto; min-width: 0;
+        display: flex; flex-direction: column;
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        overflow: hidden;
+    }
+    .chat-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--brokerly-border);
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; flex-wrap: wrap;
+    }
+    .chat-header h5 { margin: 0; font-size: 14px; color: var(--brokerly-text-strong); font-weight: 600; }
+    .chat-header .chat-header-hint { font-size: 11px; color: var(--brokerly-text-muted); }
+
+    .chat-messages {
+        flex: 1 1 auto; overflow-y: auto;
+        padding: 20px;
+        display: flex; flex-direction: column; gap: 12px;
+        background:
+            radial-gradient(1200px 400px at 50% -20%, rgba(52, 84, 209, 0.04), transparent),
+            var(--brokerly-body-bg);
+    }
+
+    .chat-empty {
+        flex: 1 1 auto;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 12px; padding: 40px 20px;
+        color: var(--brokerly-text-muted);
+    }
+    .chat-empty i { font-size: 36px; opacity: 0.6; }
+    .chat-empty h5 { font-size: 16px; color: var(--brokerly-text-strong); font-weight: 600; margin: 0; }
+    .chat-empty p { font-size: 13px; margin: 0; text-align: center; max-width: 380px; }
+
+    .chat-bubble {
+        max-width: min(78%, 720px);
+        padding: 10px 14px;
+        border-radius: var(--brokerly-radius-md);
+        font-size: 13.5px;
+        line-height: 1.55;
+        word-wrap: break-word;
+        box-shadow: 0 1px 2px rgba(40, 60, 80, 0.04);
+    }
+    .chat-bubble p { margin: 0 0 6px; }
+    .chat-bubble p:last-child { margin-bottom: 0; }
+    .chat-bubble ul, .chat-bubble ol { margin: 6px 0; padding-left: 20px; }
+    .chat-bubble code { background: rgba(40, 60, 80, 0.08); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    .chat-bubble pre { background: rgba(40, 60, 80, 0.06); padding: 8px 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; margin: 8px 0; }
+    .chat-bubble a { color: var(--brokerly-primary); }
+
+    .chat-row { display: flex; flex-direction: column; gap: 4px; }
+    .chat-row.user { align-items: flex-end; }
+    .chat-row.assistant { align-items: flex-start; }
+    .chat-row.user .chat-bubble {
+        background: var(--brokerly-primary);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+    .chat-row.user .chat-bubble a { color: #fff; text-decoration: underline; }
+    .chat-row.user .chat-bubble code { background: rgba(255, 255, 255, 0.20); color: #fff; }
+    .chat-row.assistant .chat-bubble {
+        background: var(--brokerly-surface);
+        color: var(--brokerly-text-strong);
+        border: 1px solid var(--brokerly-border);
+        border-bottom-left-radius: 4px;
+    }
+    .chat-row.error .chat-bubble {
+        background: rgba(234, 77, 77, 0.10);
+        color: var(--brokerly-danger);
+        border: 1px solid rgba(234, 77, 77, 0.30);
+    }
+    .chat-meta {
+        font-size: 10.5px; color: var(--brokerly-text-muted);
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 0 6px;
+    }
+
+    .chat-typing {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; color: var(--brokerly-text-muted);
+        padding: 8px 12px;
+        background: var(--brokerly-surface);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        width: fit-content;
+    }
+    .chat-typing .dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--brokerly-text-muted);
+        animation: chat-blink 1.2s infinite ease-in-out;
+    }
+    .chat-typing .dot:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes chat-blink {
+        0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+        40% { opacity: 1; transform: scale(1); }
+    }
+
+    .chat-composer {
+        padding: 14px 16px;
+        border-top: 1px solid var(--brokerly-border);
+        background: var(--brokerly-surface);
+    }
+    .chat-composer-inner {
+        display: flex; align-items: flex-end; gap: 10px;
+        background: var(--brokerly-surface-muted);
+        border: 1px solid var(--brokerly-border);
+        border-radius: var(--brokerly-radius-md);
+        padding: 8px 10px;
+        transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+    }
+    .chat-composer-inner:focus-within {
+        border-color: var(--brokerly-primary);
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.12);
+    }
+    .chat-composer textarea {
+        flex: 1 1 auto;
+        resize: none;
+        border: 0;
+        background: transparent;
+        outline: none;
+        font-family: inherit;
+        font-size: 13.5px;
+        line-height: 1.5;
+        min-height: 24px;
+        max-height: 180px;
+        color: var(--brokerly-text-strong);
+    }
+    .chat-composer textarea::placeholder { color: var(--brokerly-text-muted); }
+    .chat-composer .btn-send {
+        flex: 0 0 auto;
+        width: 36px; height: 36px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: var(--brokerly-radius-sm);
+        background: var(--brokerly-primary);
+        color: #fff; border: 0;
+        transition: opacity 150ms ease-out, transform 150ms ease-out;
+    }
+    .chat-composer .btn-send:hover:not(:disabled) { transform: scale(1.05); }
+    .chat-composer .btn-send:disabled { opacity: 0.45; cursor: not-allowed; }
+    .chat-composer-hint { font-size: 11px; color: var(--brokerly-text-muted); margin-top: 6px; padding: 0 4px; }
+
+    @media (max-width: 991.98px) {
+        .chat-shell {
+            flex-direction: column;
+            min-height: calc(100vh - var(--brokerly-topbar-height) - 180px);
+            max-height: none;
+        }
+        .chat-sessions { flex: 0 0 auto; max-height: 240px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-shell">
+    <aside class="chat-sessions">
+        <div class="chat-sessions-header">
+            <h6>Conversas</h6>
+            <button type="button" class="btn btn-sm btn-light-brand" data-chat-new title="Nova conversa">
+                <i class="feather-plus"></i>
+            </button>
+        </div>
+        <div class="chat-sessions-list" data-sessions-list>
+            <div class="text-center py-4 fs-12 text-muted" data-sessions-empty>
+                <div class="spinner-border spinner-border-sm text-muted" role="status"></div>
+                <div class="mt-2">Carregando conversas…</div>
+            </div>
+        </div>
+    </aside>
+
+    <section class="chat-main">
+        <div class="chat-header">
+            <div>
+                <h5 data-chat-title>Nenhuma conversa selecionada</h5>
+                <span class="chat-header-hint" data-chat-hint>Selecione uma conversa ao lado ou crie uma nova.</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-light-brand d-none" data-chat-rename>
+                <i class="feather-edit-2 me-1"></i>Renomear
+            </button>
+        </div>
+
+        <div class="chat-messages" data-chat-messages>
+            <div class="chat-empty">
+                <i class="feather-message-circle"></i>
+                <h5>Comece uma conversa</h5>
+                <p>Pergunte sobre sua carteira, sinistros, renovações ou negociações. A IA busca os dados no seu tenant em tempo real.</p>
+                <button type="button" class="btn btn-primary" data-chat-new>
+                    <i class="feather-plus me-1"></i>Nova conversa
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-composer">
+            <form data-chat-form>
+                {% csrf_token %}
+                <div class="chat-composer-inner">
+                    <textarea data-chat-input rows="1" placeholder="Escreva sua mensagem… (Enter para enviar, Shift+Enter para nova linha)" disabled></textarea>
+                    <button type="submit" class="btn-send" data-chat-send disabled aria-label="Enviar mensagem">
+                        <i class="feather-send"></i>
+                    </button>
+                </div>
+                <div class="chat-composer-hint" data-chat-status>Selecione ou crie uma conversa para começar.</div>
+            </form>
+        </div>
+    </section>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var csrfInput = document.querySelector('[data-chat-form] [name=csrfmiddlewaretoken]');
+    var csrfToken = csrfInput ? csrfInput.value : '';
+
+    var sessionsList = document.querySelector('[data-sessions-list]');
+    var sessionsEmpty = document.querySelector('[data-sessions-empty]');
+    var messages = document.querySelector('[data-chat-messages]');
+    var form = document.querySelector('[data-chat-form]');
+    var input = document.querySelector('[data-chat-input]');
+    var sendBtn = document.querySelector('[data-chat-send]');
+    var statusEl = document.querySelector('[data-chat-status]');
+    var titleEl = document.querySelector('[data-chat-title]');
+    var hintEl = document.querySelector('[data-chat-hint]');
+    var renameBtn = document.querySelector('[data-chat-rename]');
+
+    var state = { sessions: [], currentId: null, streaming: false };
+
+    function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+    }
+
+    function md(input) {
+        var text = String(input || '');
+        text = text.replace(/\r\n?/g, '\n');
+        text = esc(text);
+        text = text.replace(/```([\s\S]*?)```/g, function(_, code) {
+            return '<pre><code>' + code.trim() + '</code></pre>';
+        });
+        text = text.replace(/^######\s+(.+)$/gm, '<h6>$1</h6>');
+        text = text.replace(/^#####\s+(.+)$/gm, '<h6>$1</h6>');
+        text = text.replace(/^####\s+(.+)$/gm, '<h6>$1</h6>');
+        text = text.replace(/^###\s+(.+)$/gm, '<h6 class="mt-2">$1</h6>');
+        text = text.replace(/^##\s+(.+)$/gm, '<h5 class="mt-2">$1</h5>');
+        text = text.replace(/^#\s+(.+)$/gm, '<h4 class="mt-2">$1</h4>');
+        text = text.replace(/^---+$/gm, '<hr>');
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+        text = text.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+        text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+        text = text.replace(/(^(?:[-*] .+\n?)+)/gm, function(block) {
+            var items = block.trim().split(/\n/).map(function(l) {
+                return '<li>' + l.replace(/^[-*]\s+/, '') + '</li>';
+            });
+            return '<ul>' + items.join('') + '</ul>';
+        });
+        text = text.replace(/(^(?:\d+\. .+\n?)+)/gm, function(block) {
+            var items = block.trim().split(/\n/).map(function(l) {
+                return '<li>' + l.replace(/^\d+\.\s+/, '') + '</li>';
+            });
+            return '<ol>' + items.join('') + '</ol>';
+        });
+        text = text.split(/\n{2,}/).map(function(chunk) {
+            var trimmed = chunk.trim();
+            if (!trimmed) return '';
+            if (/^<(h[1-6]|ul|ol|pre|hr|blockquote)/.test(trimmed)) return trimmed;
+            return '<p>' + trimmed.replace(/\n/g, '<br>') + '</p>';
+        }).join('\n');
+        return text;
+    }
+
+    function fmtTime(iso) {
+        if (!iso) return '';
+        try {
+            var d = new Date(iso);
+            var now = new Date();
+            var sameDay = d.toDateString() === now.toDateString();
+            return sameDay
+                ? d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})
+                : d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+        } catch (e) { return ''; }
+    }
+
+    function renderSessions() {
+        sessionsList.innerHTML = '';
+        if (!state.sessions.length) {
+            sessionsList.innerHTML = '<div class="text-center py-4 fs-12 text-muted">Nenhuma conversa ainda.<br>Clique em <strong>Nova conversa</strong> acima.</div>';
+            return;
+        }
+        state.sessions.forEach(function(s) {
+            var row = document.createElement('div');
+            row.className = 'chat-session' + (s.id === state.currentId ? ' active' : '');
+            row.setAttribute('data-session-id', s.id);
+            row.innerHTML =
+                '<span class="chat-session-icon"><i class="feather-message-square"></i></span>' +
+                '<div class="chat-session-body">' +
+                '<span class="chat-session-title">' + esc(s.title) + '</span>' +
+                '<span class="chat-session-time">' + esc(fmtTime(s.last_message_at || s.created_at)) + '</span>' +
+                '</div>' +
+                '<div class="chat-session-actions">' +
+                '<button type="button" class="btn" data-rename title="Renomear"><i class="feather-edit-2"></i></button>' +
+                '<button type="button" class="btn" data-delete title="Excluir"><i class="feather-trash-2"></i></button>' +
+                '</div>';
+            sessionsList.appendChild(row);
+        });
+    }
+
+    function setActive(session) {
+        state.currentId = session ? session.id : null;
+        if (!session) {
+            titleEl.textContent = 'Nenhuma conversa selecionada';
+            hintEl.textContent = 'Selecione uma conversa ao lado ou crie uma nova.';
+            input.disabled = true; sendBtn.disabled = true;
+            statusEl.textContent = 'Selecione ou crie uma conversa para começar.';
+            renameBtn.classList.add('d-none');
+            renderEmpty();
+        } else {
+            titleEl.textContent = session.title;
+            hintEl.textContent = 'A IA responde em streaming e busca dados no seu tenant em tempo real.';
+            input.disabled = false; sendBtn.disabled = false;
+            statusEl.textContent = 'Pronto. Digite sua pergunta.';
+            renameBtn.classList.remove('d-none');
+        }
+        renderSessions();
+    }
+
+    function renderEmpty() {
+        messages.innerHTML =
+            '<div class="chat-empty">' +
+            '<i class="feather-message-circle"></i>' +
+            '<h5>Comece uma conversa</h5>' +
+            '<p>Pergunte sobre sua carteira, sinistros, renovações ou negociações. A IA busca os dados no seu tenant em tempo real.</p>' +
+            '<button type="button" class="btn btn-primary" data-chat-new><i class="feather-plus me-1"></i>Nova conversa</button>' +
+            '</div>';
+    }
+
+    function scrollBottom() { messages.scrollTop = messages.scrollHeight; }
+
+    function appendBubble(role, contentHtml, iso) {
+        var row = document.createElement('div');
+        row.className = 'chat-row ' + role;
+        row.innerHTML =
+            '<div class="chat-bubble" data-bubble>' + contentHtml + '</div>' +
+            (iso ? '<span class="chat-meta">' + esc(fmtTime(iso)) + '</span>' : '');
+        messages.appendChild(row);
+        scrollBottom();
+        return row;
+    }
+
+    function appendTyping() {
+        var row = document.createElement('div');
+        row.className = 'chat-row assistant';
+        row.setAttribute('data-typing-row', '1');
+        row.innerHTML =
+            '<div class="chat-typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span> Pensando…</div>';
+        messages.appendChild(row);
+        scrollBottom();
+        return row;
+    }
+
+    function renderMessages(list) {
+        messages.innerHTML = '';
+        if (!list.length) {
+            messages.innerHTML =
+                '<div class="chat-empty">' +
+                '<i class="feather-zap"></i>' +
+                '<h5>Conversa em branco</h5>' +
+                '<p>Envie a primeira mensagem para começar.</p>' +
+                '</div>';
+            return;
+        }
+        list.forEach(function(m) {
+            var html = m.role === 'assistant' ? md(m.content) : '<p>' + esc(m.content).replace(/\n/g, '<br>') + '</p>';
+            appendBubble(m.role, html, m.created_at);
+        });
+    }
+
+    function loadSessions() {
+        return fetch('/ai/chat/', {credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.ok) {
+                    state.sessions = data.sessions || [];
+                    renderSessions();
+                }
+                return data;
+            });
+    }
+
+    function loadMessages(sessionId) {
+        statusEl.textContent = 'Carregando histórico…';
+        return fetch('/ai/chat/' + sessionId + '/messages/', {credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.ok) {
+                    setActive(data.session);
+                    renderMessages(data.messages || []);
+                    statusEl.textContent = 'Pronto. Digite sua pergunta.';
+                    input.focus();
+                } else {
+                    statusEl.textContent = 'Erro ao carregar conversa.';
+                }
+            });
+    }
+
+    function createSession(title) {
+        var fd = new FormData(); fd.append('title', title || 'Nova conversa');
+        return fetch('/ai/chat/', {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+            body: fd,
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data && data.id) {
+                state.sessions.unshift(data);
+                setActive(data);
+                renderMessages([]);
+                input.focus();
+            }
+            return data;
+        });
+    }
+
+    function renameSession(sessionId, title) {
+        var fd = new FormData(); fd.append('title', title);
+        return fetch('/ai/chat/' + sessionId + '/rename/', {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+            body: fd,
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data && data.ok) {
+                state.sessions = state.sessions.map(function(s) { return s.id === sessionId ? data : s; });
+                if (state.currentId === sessionId) titleEl.textContent = data.title;
+                renderSessions();
+            }
+        });
+    }
+
+    function deleteSession(sessionId) {
+        var fd = new FormData();
+        return fetch('/ai/chat/' + sessionId + '/delete/', {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+            body: fd,
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data && data.ok) {
+                state.sessions = state.sessions.filter(function(s) { return s.id !== sessionId; });
+                if (state.currentId === sessionId) setActive(null);
+                else renderSessions();
+            }
+        });
+    }
+
+    function autoGrow(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+    }
+
+    function sendMessage(content) {
+        if (state.streaming || !state.currentId || !content) return;
+        state.streaming = true;
+        input.value = ''; autoGrow(input);
+        input.disabled = true; sendBtn.disabled = true;
+        statusEl.textContent = 'Enviando…';
+
+        // remove empty-state if present
+        var emptyEl = messages.querySelector('.chat-empty');
+        if (emptyEl) messages.innerHTML = '';
+
+        appendBubble('user', '<p>' + esc(content).replace(/\n/g, '<br>') + '</p>', new Date().toISOString());
+        var typingRow = appendTyping();
+
+        var fd = new FormData(); fd.append('content', content);
+        var url = '/ai/chat/' + state.currentId + '/stream/';
+        var fullText = '';
+        var assistantBubble = null;
+
+        function ensureBubble() {
+            if (assistantBubble) return assistantBubble;
+            typingRow.remove();
+            var row = appendBubble('assistant', '<span data-live></span>', null);
+            assistantBubble = row.querySelector('[data-bubble]');
+            return assistantBubble;
+        }
+
+        function finalize() {
+            state.streaming = false;
+            input.disabled = false; sendBtn.disabled = false;
+            statusEl.textContent = 'Pronto. Digite sua pergunta.';
+            input.focus();
+            var t = document.querySelector('[data-typing-row]');
+            if (t) t.remove();
+            // refresh sidebar to update last_message_at ordering
+            loadSessions();
+        }
+
+        function handleEvent(payload) {
+            if (payload.type === 'token' && payload.content) {
+                fullText += payload.content;
+                ensureBubble().innerHTML = md(fullText);
+                scrollBottom();
+            } else if (payload.type === 'error') {
+                typingRow.remove();
+                appendBubble('error', '<p><i class="feather-alert-circle me-1"></i>' + esc(payload.message || 'Erro na resposta.') + '</p>', new Date().toISOString());
+            } else if (payload.type === 'done') {
+                if (fullText && !assistantBubble) {
+                    ensureBubble().innerHTML = md(fullText);
+                }
+                finalize();
+            }
+        }
+
+        fetch(url, {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+            body: fd,
+        }).then(function(response) {
+            if (!response.ok) { throw new Error('HTTP ' + response.status); }
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder('utf-8');
+            var buffer = '';
+            function pump() {
+                return reader.read().then(function(res) {
+                    if (res.done) { finalize(); return; }
+                    buffer += decoder.decode(res.value, {stream: true});
+                    var parts = buffer.split(/\n\n/);
+                    buffer = parts.pop() || '';
+                    parts.forEach(function(chunk) {
+                        chunk.split(/\n/).forEach(function(line) {
+                            if (line.indexOf('data: ') === 0) {
+                                try { handleEvent(JSON.parse(line.slice(6))); }
+                                catch (e) { /* ignore */ }
+                            }
+                        });
+                    });
+                    return pump();
+                });
+            }
+            return pump();
+        }).catch(function(err) {
+            typingRow.remove();
+            appendBubble('error', '<p><i class="feather-alert-circle me-1"></i>Falha de rede: ' + esc(err.message || 'erro') + '</p>', new Date().toISOString());
+            finalize();
+        });
+    }
+
+    // ==== events ====
+    document.addEventListener('click', function(e) {
+        var btnNew = e.target.closest('[data-chat-new]');
+        if (btnNew) {
+            e.preventDefault();
+            createSession('Nova conversa');
+            return;
+        }
+        var row = e.target.closest('.chat-session');
+        if (row) {
+            var idAttr = row.getAttribute('data-session-id');
+            if (!idAttr) return;
+            var id = parseInt(idAttr, 10);
+            var actionRename = e.target.closest('[data-rename]');
+            var actionDelete = e.target.closest('[data-delete]');
+            if (actionRename) {
+                e.stopPropagation();
+                var current = state.sessions.find(function(s) { return s.id === id; });
+                var newTitle = window.prompt('Renomear conversa:', current ? current.title : '');
+                if (newTitle && newTitle.trim()) renameSession(id, newTitle.trim());
+                return;
+            }
+            if (actionDelete) {
+                e.stopPropagation();
+                if (window.confirm('Excluir esta conversa?')) deleteSession(id);
+                return;
+            }
+            loadMessages(id);
+            return;
+        }
+        if (e.target.closest('[data-chat-rename]')) {
+            e.preventDefault();
+            var current = state.sessions.find(function(s) { return s.id === state.currentId; });
+            var newTitle = window.prompt('Renomear conversa:', current ? current.title : '');
+            if (newTitle && newTitle.trim()) renameSession(state.currentId, newTitle.trim());
+        }
+    });
+
+    input.addEventListener('input', function() { autoGrow(this); });
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            var val = this.value.trim();
+            if (val) sendMessage(val);
+        }
+    });
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var val = input.value.trim();
+        if (val) sendMessage(val);
+    });
+
+    loadSessions().then(function(data) {
+        if (data && data.ok && (data.sessions || []).length) {
+            loadMessages(data.sessions[0].id);
+        } else {
+            setActive(null);
+        }
+    });
+})();
+</script>
+{% endblock %}

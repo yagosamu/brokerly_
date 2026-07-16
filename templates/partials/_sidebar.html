@@ -18,8 +18,8 @@
                         <span class="nxl-mtext">Dashboard</span>
                     </a>
                 </li>
-                <li class="nxl-item">
-                    <a href="#" class="nxl-link">
+                <li class="nxl-item {% if request.resolver_match.url_name == 'chat_page' %}active{% endif %}">
+                    <a href="{% url 'chat_page' %}" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-send"></i></span>
                         <span class="nxl-mtext">Chat IA</span>
                     </a>
