@@ -8,19 +8,109 @@ de restore é apenas esperança otimista com gzip.
 
 | Item | Estratégia |
 |---|---|
-| PostgreSQL | `pg_dump` diário compactado. |
-| Mídia | Cópia do volume `media_data`. |
-| Segredos | Cópia em cofre seguro. |
+| PostgreSQL | Dump em formato custom do `pg_dump`. |
+| Mídia | Snapshot compactado do diretório `MEDIA_ROOT`. |
+| Segredos | Cópia manual em cofre seguro. |
 | Offsite | Object storage com versionamento. |
-| Restore | Procedimento testado periodicamente. |
+| Restore | Procedimento destrutivo, confirmado com `--yes`. |
 
-## Dump do banco
+## Scripts versionados
+
+Os scripts ficam em `scripts/`:
+
+- `scripts/backup.sh`
+- `scripts/restore.sh`
+
+Eles usam apenas variáveis de ambiente e não imprimem credenciais no output. O
+mesmo script roda localmente, em container ou na VPS, desde que `pg_dump`,
+`pg_restore` e `tar` estejam disponíveis.
+
+## Variáveis esperadas
+
+| Variável | Obrigatória | Exemplo |
+|---|---|---|
+| `POSTGRES_USER` | Sim | `brokerly` |
+| `POSTGRES_PASSWORD` | Sim | `change-me` |
+| `POSTGRES_HOST` | Sim | `db` |
+| `POSTGRES_DB` | Sim | `brokerly` |
+| `POSTGRES_PORT` | Não | `5432` |
+| `BACKUP_DIR` | Não | `/var/backups/brokerly` |
+| `MEDIA_ROOT` | Não | `/app/media` |
+
+`BACKUP_DIR` e `MEDIA_ROOT` têm defaults seguros para produção em container:
+
+- `BACKUP_DIR=/var/backups/brokerly`
+- `MEDIA_ROOT=/app/media`
+
+## Rodar backup
 
 ```bash
-DB=$(docker ps --filter name=brokerly_db -q | head -n1)
-docker exec "$DB" pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" \
-  | gzip > "/backups/brokerly_$(date +%F).sql.gz"
+POSTGRES_USER=brokerly \
+POSTGRES_PASSWORD=change-me \
+POSTGRES_HOST=db \
+POSTGRES_DB=brokerly \
+BACKUP_DIR=/var/backups/brokerly \
+MEDIA_ROOT=/app/media \
+bash scripts/backup.sh
 ```
+
+Saídas esperadas:
+
+- `db_YYYYMMDD_HHMMSS.dump`
+- `media_YYYYMMDD_HHMMSS.tar.gz`
+
+O dump usa:
+
+```bash
+pg_dump --no-owner --no-privileges --format=custom
+```
+
+Esse formato preserva flexibilidade para restore com `pg_restore`, sem amarrar o
+arquivo ao owner original do banco.
+
+## Rodar restore
+
+Restore é destrutivo por definição. O script exige `--yes` como terceiro
+argumento para reduzir acidente operacional.
+
+```bash
+POSTGRES_USER=brokerly \
+POSTGRES_PASSWORD=change-me \
+POSTGRES_HOST=db \
+POSTGRES_DB=brokerly \
+MEDIA_ROOT=/app/media \
+bash scripts/restore.sh \
+  /var/backups/brokerly/db_20260717_030000.dump \
+  /var/backups/brokerly/media_20260717_030000.tar.gz \
+  --yes
+```
+
+Para restaurar apenas o banco, omita o tar de mídia, mas mantenha `--yes` como o
+segundo argumento real do comando:
+
+```bash
+bash scripts/restore.sh /var/backups/brokerly/db_20260717_030000.dump '' --yes
+```
+
+## Aviso de restore
+
+!!! warning "Operação destrutiva"
+    `restore.sh` executa `pg_restore --clean --if-exists`, removendo objetos do
+    schema antes de recriá-los. Faça snapshot do estado atual ou restaure em
+    ambiente isolado quando a intenção for apenas investigar dados antigos.
+
+## Agendamento sugerido
+
+Não há cron configurado pelo projeto nesta sprint. Quando a produção estiver
+pronta, a sugestão operacional é rodar diariamente às 03h:
+
+```cron
+0 3 * * * cd /app && BACKUP_DIR=/var/backups/brokerly bash scripts/backup.sh
+```
+
+Em Docker Swarm, prefira executar em um nó com acesso ao banco, às variáveis de
+ambiente e ao volume de mídia. Se os segredos estiverem em Docker Secrets, monte
+ou exporte os valores antes da chamada.
 
 ## Retenção sugerida
 
@@ -30,14 +120,8 @@ docker exec "$DB" pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" \
 | Semanais | 4 |
 | Mensais | 12 |
 
-## Backup de mídia
-
-Use `tar`, `rsync` ou snapshot de volume. O importante é preservar caminhos,
-permissões e consistência com os registros do banco.
-
-```bash
-tar -czf /backups/brokerly_media_$(date +%F).tar.gz /var/lib/docker/volumes/...
-```
+Remova backups antigos somente depois de confirmar que a cópia offsite foi
+concluída.
 
 ## Offsite
 
@@ -45,33 +129,16 @@ Envie banco e mídia para S3, Backblaze, MinIO ou outro storage com versionament
 Proteja o bucket contra deleção acidental e use credenciais específicas para
 backup.
 
-## Restore do banco
+## Procedimento de restore validado
 
-```bash
-DB=$(docker ps --filter name=brokerly_db -q | head -n1)
-gunzip -c /backups/brokerly_2026-05-28.sql.gz \
-  | docker exec -i "$DB" psql -U "$POSTGRES_USER" "$POSTGRES_DB"
-```
-
-!!! warning "Restore destrutivo"
-    Restaurar sobre uma base existente pode sobrescrever dados. Faça snapshot ou
-    restore em ambiente isolado antes de operar em produção.
-
-## Restore de mídia
-
-1. Parar serviços que escrevem mídia.
-2. Restaurar volume ou diretório.
-3. Conferir dono/permissões.
-4. Subir app.
-5. Testar download protegido de anexos.
-
-## Teste periódico
-
-| Frequência | Verificação |
-|---|---|
-| Semanal | Dump existe, tamanho plausível e upload offsite ok. |
-| Mensal | Restore em ambiente separado. |
-| Trimestral | Simulação de perda total. |
+1. Baixar dump e tar de mídia do storage offsite.
+2. Conferir checksum e tamanho dos arquivos.
+3. Parar serviços que escrevem no banco e em `MEDIA_ROOT`.
+4. Executar `scripts/restore.sh` com `--yes`.
+5. Subir app e workers.
+6. Rodar `python manage.py check`.
+7. Testar login, dashboard e download protegido de anexos.
+8. Registrar data, operador, origem do backup e resultado.
 
 ## Segredos
 
@@ -80,10 +147,11 @@ mídia pode não bastar para voltar o serviço.
 
 ## Checklist
 
-- [ ] Dump diário configurado.
-- [ ] Retenção aplicada.
-- [ ] Cópia offsite testada.
-- [ ] Restore documentado.
-- [ ] Mídia protegida incluída.
-- [ ] Segredos salvos fora da VPS.
-- [ ] Teste de restore registrado.
+- [x] Script de dump PostgreSQL criado.
+- [x] Script de snapshot de mídia criado.
+- [x] Script de restore com confirmação destrutiva criado.
+- [x] Invocações documentadas.
+- [x] Cron sugerido documentado.
+- [ ] Cron real configurado em produção.
+- [ ] Cópia offsite configurada em produção.
+- [ ] Teste de restore registrado em ambiente isolado.

@@ -3751,12 +3751,12 @@ flowchart LR
 
 ### Sprint 28 — Ajustes Finais
 **Objetivo:** estabilização e polimento.
-- [ ] Revisão de isolamento por tenant em todas as views (auditoria de `get_queryset`)
-- [ ] Otimização de queries (`select_related`/`prefetch_related`, índices)
+- [x] Revisão de isolamento por tenant em todas as views (auditoria de `get_queryset`)
+- [x] Otimização de queries (`select_related`/`prefetch_related`, índices)
 - [ ] Páginas 404/500 customizadas e mensagens de erro/sucesso
 - [ ] Modais de confirmação para ações destrutivas
 - [ ] Revisão final do Design System em todas as telas (responsivo)
-- [ ] Configurar backups (pg_dump + mídia) e logs/monitoramento
+- [x] Configurar backups (pg_dump + mídia) e logs/monitoramento
 
 **Entrega:** sistema estável, seguro, responsivo e pronto para uso real.
 

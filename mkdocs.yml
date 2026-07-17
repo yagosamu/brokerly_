@@ -63,7 +63,9 @@ markdown_extensions:
 nav:
   - Início: index.md
   - Arquitetura: architecture.md
-  - Multi Tenant: multi-tenant.md
+  - Multi Tenant:
+      - Estratégia: multi-tenant.md
+      - Auditoria: tenant-audit.md
   - Modelo de Domínio: domain-model.md
   - Permissões: permissions.md
   - Mídia Protegida: protected-media.md
