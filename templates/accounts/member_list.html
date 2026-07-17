@@ -151,7 +151,7 @@
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_role %}role={{ selected_role }}&{% endif %}page={{ page_obj.previous_page_number|default:1 }}">
+                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_role %}role={{ selected_role }}&{% endif %}page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}">
                         <i class="feather-arrow-left"></i>
                     </a>
                 </li>
@@ -159,7 +159,7 @@
                     <span class="page-link">{{ page_obj.number }}</span>
                 </li>
                 <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_role %}role={{ selected_role }}&{% endif %}page={{ page_obj.next_page_number|default:page_obj.paginator.num_pages }}">
+                    <a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_role %}role={{ selected_role }}&{% endif %}page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}">
                         <i class="feather-arrow-right"></i>
                     </a>
                 </li>
