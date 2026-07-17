@@ -4,6 +4,10 @@ site_url: https://docs.brokerly.example
 repo_url: https://github.com/yagosamu/brokerly
 edit_uri: edit/main/docs/
 
+exclude_docs: |
+  superpowers/
+  screenshots/
+
 theme:
   name: material
   language: pt
