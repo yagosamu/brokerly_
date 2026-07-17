@@ -106,7 +106,9 @@ class AgentDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     allowed_roles = ()
 
     def get_queryset(self):
-        return super().get_queryset().select_related('user')
+        return super().get_queryset().select_related('user').prefetch_related(
+            'producers',
+        )
 
 
 class ProducerListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):

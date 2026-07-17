@@ -407,7 +407,10 @@ class EndorsementListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ()
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('policy')
+        queryset = super().get_queryset().select_related(
+            'policy',
+            'policy__client',
+        )
         query = self.request.GET.get('q', '').strip()
         if query:
             queryset = queryset.filter(
@@ -509,6 +512,8 @@ class EndorsementDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'policy',
+            'policy__client',
+            'policy__insurer',
             'created_by',
         )
 

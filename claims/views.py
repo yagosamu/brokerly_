@@ -19,6 +19,8 @@ class ClaimListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset().select_related(
             'policy',
+            'policy__client',
+            'policy__insurer',
             'covered_item',
         )
         query = self.request.GET.get('q', '').strip()

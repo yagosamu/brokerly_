@@ -99,6 +99,12 @@ class RenewalUpdateView(RoleRequiredMixin, TenantQuerysetMixin, UpdateView):
     form_class = RenewalForm
     allowed_roles = ('owner', 'manager', 'broker', 'agent')
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'policy',
+            'policy__client',
+        )
+
     def get_success_url(self):
         return reverse_lazy('renewals:renewal_detail', args=[self.object.id])
 
