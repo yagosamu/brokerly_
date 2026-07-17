@@ -13,12 +13,13 @@ from notifications.models import Notification
 def unread_json(request):
     """Return unread notifications for the current user."""
     tenant = getattr(request, 'tenant', None)
+    if tenant is None:
+        return JsonResponse({'ok': False, 'error': 'Conta sem corretora.'}, status=403)
     queryset = Notification.objects.filter(
         user=request.user,
         is_read=False,
+        brokerage=tenant,
     )
-    if tenant is not None:
-        queryset = queryset.filter(brokerage=tenant)
     count = queryset.count()
     notifications = queryset.order_by('-created_at')[:20]
     return JsonResponse({
@@ -42,9 +43,13 @@ def unread_json(request):
 @require_POST
 def mark_read(request, pk):
     tenant = getattr(request, 'tenant', None)
-    queryset = Notification.objects.filter(user=request.user, pk=pk)
-    if tenant is not None:
-        queryset = queryset.filter(brokerage=tenant)
+    if tenant is None:
+        return JsonResponse({'ok': False, 'error': 'Conta sem corretora.'}, status=403)
+    queryset = Notification.objects.filter(
+        user=request.user,
+        pk=pk,
+        brokerage=tenant,
+    )
     notification = queryset.first()
     if notification is None:
         return JsonResponse(
@@ -68,12 +73,13 @@ def mark_read(request, pk):
 @require_POST
 def mark_all_read(request):
     tenant = getattr(request, 'tenant', None)
+    if tenant is None:
+        return JsonResponse({'ok': False, 'error': 'Conta sem corretora.'}, status=403)
     queryset = Notification.objects.filter(
         user=request.user,
         is_read=False,
+        brokerage=tenant,
     )
-    if tenant is not None:
-        queryset = queryset.filter(brokerage=tenant)
     updated = queryset.update(is_read=True, read_at=timezone.now())
     return JsonResponse({'ok': True, 'updated': updated})
 
