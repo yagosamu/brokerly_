@@ -82,6 +82,7 @@ class Claim(TenantAwareModel):
         ]
         indexes = [
             models.Index(fields=['brokerage', 'status']),
+            models.Index(fields=['brokerage', '-created_at']),
             models.Index(fields=['brokerage', '-occurrence_date']),
         ]
 

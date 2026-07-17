@@ -40,6 +40,7 @@ class Commission(TenantAwareModel):
         ordering = ('-reference_date',)
         indexes = [
             models.Index(fields=['brokerage', 'status']),
+            models.Index(fields=['brokerage', '-created_at']),
             models.Index(fields=['brokerage', '-reference_date']),
         ]
 

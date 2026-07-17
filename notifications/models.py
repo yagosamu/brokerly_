@@ -33,6 +33,8 @@ class Notification(TenantAwareModel):
     class Meta:
         ordering = ('-created_at',)
         indexes = [
+            models.Index(fields=['brokerage', '-created_at']),
+            models.Index(fields=['brokerage', 'is_read', '-created_at']),
             models.Index(fields=['user', 'is_read', '-created_at']),
         ]
 

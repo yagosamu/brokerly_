@@ -52,6 +52,7 @@ class Renewal(TenantAwareModel):
             ),
         ]
         indexes = [
+            models.Index(fields=['brokerage', '-created_at']),
             models.Index(fields=['brokerage', 'status', 'due_date']),
         ]
 

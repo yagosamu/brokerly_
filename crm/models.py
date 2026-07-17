@@ -162,6 +162,7 @@ class Deal(TenantAwareModel):
         ordering = ('-created_at',)
         indexes = [
             models.Index(fields=['brokerage', 'status']),
+            models.Index(fields=['brokerage', '-created_at']),
             models.Index(fields=['brokerage', 'stage']),
         ]
 
