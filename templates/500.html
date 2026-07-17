@@ -1,0 +1,65 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-BR" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>500 · Erro interno · Brokerly</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'vendor/duralux/images/favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendor/duralux/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tokens.css' %}">
+    <style>
+        .err-page {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 48px 24px;
+            background:
+                radial-gradient(ellipse 90% 60% at 30% 25%, rgba(234, 77, 77, 0.08), transparent 65%),
+                var(--brokerly-body-bg, #f3f4f6);
+            font-family: var(--brokerly-font-family, 'Inter', system-ui, sans-serif);
+        }
+        .err-card {
+            max-width: 560px; width: 100%;
+            text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+        .err-code {
+            font-size: clamp(96px, 18vw, 168px);
+            font-weight: 700;
+            line-height: 0.95;
+            letter-spacing: -0.06em;
+            color: var(--brokerly-danger, #ea4d4d);
+            font-variant-numeric: tabular-nums;
+            opacity: 0.92;
+        }
+        .err-title {
+            font-size: clamp(20px, 3vw, 26px);
+            font-weight: 700;
+            color: var(--brokerly-text-strong, #283c50);
+            margin: 0;
+        }
+        .err-body {
+            color: var(--brokerly-text, #6b7885);
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 0;
+            max-width: 46ch;
+        }
+        .err-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <main class="err-page">
+        <div class="err-card">
+            <div class="err-code" aria-hidden="true">500</div>
+            <h1 class="err-title">Algo deu errado do nosso lado</h1>
+            <p class="err-body">
+                Registramos o erro e nossa equipe já foi notificada. Tente novamente em alguns instantes ou volte para a home.
+            </p>
+            <div class="err-actions">
+                <a href="/" class="btn btn-primary">Ir para a home</a>
+                <a href="javascript:history.back()" class="btn btn-light">Voltar</a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

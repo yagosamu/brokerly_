@@ -41,6 +41,8 @@
             {% block content %}{% endblock %}
         </div>
 
+        {% include 'partials/_confirm_modal.html' %}
+
         <footer class="footer">
             <p class="fs-11 text-muted fw-medium text-uppercase mb-0 lh-1">
                 &copy; {% now 'Y' %} Brokerly. Todos os direitos reservados.

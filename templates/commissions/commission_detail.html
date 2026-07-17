@@ -151,12 +151,16 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <form method="post" action="{% url 'commissions:split_delete' split.id %}" class="d-inline" onsubmit="return confirm('Excluir este repasse?');">
+                                    <form id="form-delete-split-{{ split.id }}" method="post" action="{% url 'commissions:split_delete' split.id %}" class="d-none">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-light-brand text-danger" title="Excluir">
-                                            <i class="feather-trash-2"></i>
-                                        </button>
                                     </form>
+                                    <button type="button" class="btn btn-sm btn-light-brand text-danger" title="Excluir"
+                                            data-confirm-title="Excluir repasse"
+                                            data-confirm-body="Excluir este repasse de comissão? Essa ação não pode ser desfeita."
+                                            data-confirm-cta="Excluir"
+                                            data-confirm-target="#form-delete-split-{{ split.id }}">
+                                        <i class="feather-trash-2"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}

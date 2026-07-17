@@ -3753,9 +3753,9 @@ flowchart LR
 **Objetivo:** estabilização e polimento.
 - [x] Revisão de isolamento por tenant em todas as views (auditoria de `get_queryset`)
 - [x] Otimização de queries (`select_related`/`prefetch_related`, índices)
-- [ ] Páginas 404/500 customizadas e mensagens de erro/sucesso
-- [ ] Modais de confirmação para ações destrutivas
-- [ ] Revisão final do Design System em todas as telas (responsivo)
+- [x] Páginas 404/500 customizadas e mensagens de erro/sucesso
+- [x] Modais de confirmação para ações destrutivas
+- [x] Revisão final do Design System em todas as telas (responsivo)
 - [x] Configurar backups (pg_dump + mídia) e logs/monitoramento
 
 **Entrega:** sistema estável, seguro, responsivo e pronto para uso real.

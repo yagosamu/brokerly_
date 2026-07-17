@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}404 · Página não encontrada · Brokerly{% endblock %}
+
+{% block extra_css %}
+<style>
+    .err-page {
+        min-height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        padding: 48px 24px;
+        background:
+            radial-gradient(ellipse 90% 60% at 30% 25%, rgba(52, 84, 209, 0.08), transparent 65%),
+            var(--brokerly-body-bg, #f3f4f6);
+    }
+    .err-card {
+        max-width: 560px; width: 100%;
+        text-align: center;
+        display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+    .err-code {
+        font-size: clamp(96px, 18vw, 168px);
+        font-weight: 700;
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        color: var(--brokerly-primary, #3454d1);
+        font-variant-numeric: tabular-nums;
+        opacity: 0.92;
+    }
+    .err-title {
+        font-size: clamp(20px, 3vw, 26px);
+        font-weight: 700;
+        color: var(--brokerly-text-strong, #283c50);
+        margin: 0;
+    }
+    .err-body {
+        color: var(--brokerly-text, #6b7885);
+        font-size: 15px;
+        line-height: 1.6;
+        margin: 0;
+        max-width: 44ch;
+    }
+    .err-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<main class="err-page">
+    <div class="err-card">
+        <div class="err-code" aria-hidden="true">404</div>
+        <h1 class="err-title">Página não encontrada</h1>
+        <p class="err-body">
+            O endereço solicitado não existe, foi removido, ou você não tem acesso a ele. Verifique o link ou volte para o painel.
+        </p>
+        <div class="err-actions">
+            <a href="/" class="btn btn-primary"><i class="feather-home me-1"></i>Ir para a home</a>
+            <a href="javascript:history.back()" class="btn btn-light-brand"><i class="feather-arrow-left me-1"></i>Voltar</a>
+        </div>
+    </div>
+</main>
+{% endblock %}

@@ -661,7 +661,19 @@
             }
             if (actionDelete) {
                 e.stopPropagation();
-                if (window.confirm('Excluir esta conversa?')) deleteSession(id);
+                var current = state.sessions.find(function(s) { return s.id === id; });
+                var target = (current && current.title) || 'esta conversa';
+                if (window.brokerly && window.brokerly.confirm) {
+                    window.brokerly.confirm({
+                        title: 'Excluir conversa',
+                        body: 'Excluir "' + target + '"? O histórico não poderá ser recuperado.',
+                        cta: 'Excluir',
+                        variant: 'danger',
+                        onConfirm: function() { deleteSession(id); },
+                    });
+                } else if (window.confirm('Excluir esta conversa?')) {
+                    deleteSession(id);
+                }
                 return;
             }
             loadMessages(id);

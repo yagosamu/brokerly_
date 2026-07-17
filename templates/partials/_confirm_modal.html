@@ -1,0 +1,103 @@
+{% comment %}
+Modal global de confirmação. Uso:
+
+  <button type="button"
+          data-confirm-title="Excluir cliente"
+          data-confirm-body="Isso remove permanentemente o cliente e o histórico. Continuar?"
+          data-confirm-cta="Excluir"
+          data-confirm-variant="danger"
+          data-confirm-target="#form-delete-client-42">
+    <i class="feather-trash-2 me-1"></i>Excluir
+  </button>
+
+  <form id="form-delete-client-42" method="post" action="{% url 'clients:delete' 42 %}" class="d-none">
+    {% csrf_token %}
+  </form>
+
+Ou passe uma URL diretamente em `data-confirm-href` para navegação simples
+(GET/link) sem envolver form.
+{% endcomment %}
+<div class="modal fade" id="brokerly-confirm-modal" tabindex="-1" aria-labelledby="brokerly-confirm-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="brokerly-confirm-title">Confirmar ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="brokerly-confirm-body">Tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light-brand" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="brokerly-confirm-cta">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    if (window.__brokerlyConfirmInstalled) return;
+    window.__brokerlyConfirmInstalled = true;
+
+    var modalEl = document.getElementById('brokerly-confirm-modal');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
+
+    var modal = new bootstrap.Modal(modalEl);
+    var titleEl = document.getElementById('brokerly-confirm-title');
+    var bodyEl = document.getElementById('brokerly-confirm-body');
+    var ctaEl = document.getElementById('brokerly-confirm-cta');
+    var pending = null;
+
+    function classForVariant(variant) {
+        var v = (variant || 'danger').toLowerCase();
+        if (v === 'primary') return 'btn btn-primary';
+        if (v === 'warning') return 'btn btn-warning';
+        if (v === 'success') return 'btn btn-success';
+        return 'btn btn-danger';
+    }
+
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-confirm-target], [data-confirm-href]');
+        if (!btn) return;
+        e.preventDefault();
+        titleEl.textContent = btn.getAttribute('data-confirm-title') || 'Confirmar ação';
+        bodyEl.textContent = btn.getAttribute('data-confirm-body') || 'Tem certeza que deseja continuar?';
+        ctaEl.textContent = btn.getAttribute('data-confirm-cta') || 'Confirmar';
+        ctaEl.className = classForVariant(btn.getAttribute('data-confirm-variant'));
+        pending = {
+            target: btn.getAttribute('data-confirm-target'),
+            href: btn.getAttribute('data-confirm-href'),
+        };
+        modal.show();
+    });
+
+    ctaEl.addEventListener('click', function() {
+        if (!pending) return;
+        var next = pending; pending = null;
+        modal.hide();
+        // Give the modal a beat to close before navigating/submitting.
+        setTimeout(function() {
+            if (typeof next.callback === 'function') {
+                next.callback();
+            } else if (next.target) {
+                var form = document.querySelector(next.target);
+                if (form) form.submit();
+            } else if (next.href) {
+                window.location.href = next.href;
+            }
+        }, 120);
+    });
+
+    // Programmatic API — for JS-driven flows (chat, XHR deletes, etc.).
+    window.brokerly = window.brokerly || {};
+    window.brokerly.confirm = function(opts) {
+        opts = opts || {};
+        titleEl.textContent = opts.title || 'Confirmar ação';
+        bodyEl.textContent = opts.body || 'Tem certeza que deseja continuar?';
+        ctaEl.textContent = opts.cta || 'Confirmar';
+        ctaEl.className = classForVariant(opts.variant);
+        pending = { callback: typeof opts.onConfirm === 'function' ? opts.onConfirm : null };
+        modal.show();
+    };
+})();
+</script>

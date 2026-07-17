@@ -108,13 +108,17 @@ Uso:
                                 <i class="feather-download"></i>
                             </a>
                             {% if can_delete %}
-                            <form method="post" action="{% url 'documents:delete' doc.id %}" class="d-inline" onsubmit="return confirm('Excluir o anexo {{ doc.original_name|escapejs }}?');">
+                            <form id="form-delete-doc-{{ doc.id }}" method="post" action="{% url 'documents:delete' doc.id %}" class="d-none">
                                 {% csrf_token %}
                                 <input type="hidden" name="next" value="{{ next_url|default:request.path }}">
-                                <button type="submit" class="btn btn-sm btn-light-brand text-danger" title="Excluir">
-                                    <i class="feather-trash-2"></i>
-                                </button>
                             </form>
+                            <button type="button" class="btn btn-sm btn-light-brand text-danger" title="Excluir"
+                                    data-confirm-title="Excluir anexo"
+                                    data-confirm-body="Excluir o anexo &quot;{{ doc.original_name }}&quot;? Essa ação não pode ser desfeita."
+                                    data-confirm-cta="Excluir"
+                                    data-confirm-target="#form-delete-doc-{{ doc.id }}">
+                                <i class="feather-trash-2"></i>
+                            </button>
                             {% endif %}
                         </td>
                     </tr>
