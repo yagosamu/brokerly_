@@ -98,6 +98,8 @@ coverage.xml
 # PDFs / outputs gerados
 /output/
 /generated_pdfs/
+/site/
+.docsvenv/
 
 # Logs
 logs/

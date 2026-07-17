@@ -3731,9 +3731,9 @@ flowchart LR
 
 ### Sprint 26 — Documentação MKDocs
 **Objetivo:** documentação técnica.
-- [ ] Configurar MKDocs (Material) com suporte a Mermaid
-- [ ] Criar documentos obrigatórios (seção 41.2)
-- [ ] Diagramas de arquitetura/ER/fluxos em Mermaid
+- [x] Configurar MKDocs (Material) com suporte a Mermaid
+- [x] Criar documentos obrigatórios (seção 41.2)
+- [x] Diagramas de arquitetura/ER/fluxos em Mermaid
 - [ ] (Opcional) servir docs em container
 
 **Entrega:** documentação navegável com diagramas.

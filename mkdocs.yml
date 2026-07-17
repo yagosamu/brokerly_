@@ -1,0 +1,75 @@
+site_name: Brokerly Docs
+site_description: Documentação técnica do Brokerly — SaaS multi-tenant para corretoras de seguros.
+site_url: https://docs.brokerly.example
+repo_url: https://github.com/yagosamu/brokerly
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: pt
+  palette:
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Alternar para modo escuro
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Alternar para modo claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - content.tabs.link
+    - toc.integrate
+    - search.highlight
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Início: index.md
+  - Arquitetura: architecture.md
+  - Multi Tenant: multi-tenant.md
+  - Modelo de Domínio: domain-model.md
+  - Permissões: permissions.md
+  - Mídia Protegida: protected-media.md
+  - Agentes de IA: ai-agents.md
+  - Tarefas Celery: celery-tasks.md
+  - Variáveis de Ambiente: env-vars.md
+  - Ambiente Local: local-dev.md
+  - Deploy: deploy.md
+  - Backup: backup.md
+  - Runbook: runbook.md
+
+extra:
+  generator: false
