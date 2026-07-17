@@ -69,6 +69,33 @@ Workers já sobem pelo Compose. Se alterar tasks ou apps, reinicie o worker:
 docker compose restart celery_worker celery_beat
 ```
 
+## Semear dados de demonstração
+
+Para popular o ambiente com dados fake diversos:
+
+```bash
+docker compose exec app python manage.py seed_demo --brokerages 3
+```
+
+Flags úteis:
+
+- `--flush` — apaga TODOS os dados de domínio antes, mantendo superusers.
+- `--seed N` — semente reproduzível (default `42`).
+- `--with-files` — cria anexos PDF placeholder.
+- `--force` — necessário em ambientes com `DEBUG=False`.
+
+Usuários criados:
+
+- `owner@corretora-1.local`
+- `owner@corretora-2.local`
+- `owner@corretora-3.local`
+
+Senha padrão:
+
+```text
+Brokerly@2026
+```
+
 ## Documentação local
 
 Docs usam dependências separadas:

@@ -16,6 +16,7 @@ django-celery-results==2.6.0
 django-environ==0.14.0
 django-widget-tweaks==1.5.1
 dj-celery-panel==0.4.0
+Faker>=30.0,<40.0
 freetype-py==2.5.1
 h11==0.16.0
 html5lib==1.1
